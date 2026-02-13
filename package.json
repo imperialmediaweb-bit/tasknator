@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npx prisma generate && next build",
-    "start": "npx prisma db push --skip-generate && npx prisma db seed && next start",
+    "start": "npx prisma db push --skip-generate || echo 'db push skipped'; npx prisma db seed || echo 'seed skipped'; next start",
     "lint": "next lint",
     "postinstall": "npx prisma generate",
     "worker": "ts-node --project tsconfig.worker.json src/lib/jobs/worker.ts",
