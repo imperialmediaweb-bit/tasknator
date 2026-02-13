@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "npx prisma generate && next build",
-    "start": "timeout 60 npx prisma db push --skip-generate 2>&1 || true; next start",
+    "start": "node scripts/ensure-db.mjs; next start",
     "lint": "next lint",
     "postinstall": "npx prisma generate",
     "worker": "ts-node --project tsconfig.worker.json src/lib/jobs/worker.ts",

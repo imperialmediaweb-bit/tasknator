@@ -1,6 +1,19 @@
 export async function register() {
   // Only run on Node.js runtime (not edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Ensure schema is up-to-date before seeding
+    try {
+      const { execSync } = await import("child_process");
+      console.log("[bootstrap] Ensuring database schema...");
+      execSync("npx prisma db push --skip-generate", {
+        timeout: 30_000,
+        stdio: "pipe",
+      });
+      console.log("[bootstrap] Schema verified.");
+    } catch (e: any) {
+      console.warn("[bootstrap] Schema push skipped:", e.message?.slice(0, 200));
+    }
+
     try {
       const { db } = await import("./lib/db");
       const bcrypt = await import("bcryptjs");
