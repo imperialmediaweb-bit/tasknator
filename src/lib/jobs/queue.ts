@@ -5,10 +5,10 @@ const connection = new IORedis(process.env.REDIS_URL || "redis://localhost:6379"
   maxRetriesPerRequest: null,
 });
 
-export const auditQueue = new Queue("audit", { connection });
-export const planQueue = new Queue("plan", { connection });
-export const assetQueue = new Queue("asset", { connection });
-export const exportQueue = new Queue("export", { connection });
+export const auditQueue = new Queue("audit", { connection: connection as any });
+export const planQueue = new Queue("plan", { connection: connection as any });
+export const assetQueue = new Queue("asset", { connection: connection as any });
+export const exportQueue = new Queue("export", { connection: connection as any });
 
 export type AuditJobData = {
   auditRunId: string;
