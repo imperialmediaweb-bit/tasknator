@@ -16,33 +16,42 @@ const providers: Provider[] = [
     async authorize(credentials) {
       if (!credentials?.email || !credentials?.password) return null;
 
-      const user = await db.user.findUnique({
-        where: { email: credentials.email },
-      });
+      try {
+        const user = await db.user.findUnique({
+          where: { email: credentials.email },
+        });
 
-      if (!user || !user.passwordHash) return null;
+        if (!user || !user.passwordHash) return null;
 
-      const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-      if (!valid) return null;
+        const valid = await bcrypt.compare(credentials.password, user.passwordHash);
+        if (!valid) return null;
 
-      return { id: user.id, email: user.email, name: user.name, image: user.image };
+        return { id: user.id, email: user.email, name: user.name, image: user.image };
+      } catch (error) {
+        console.error("Auth DB error:", error);
+        return null;
+      }
     },
   }),
 ];
 
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+const useGoogleOAuth = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+if (useGoogleOAuth) {
   providers.unshift(
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     })
   );
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db) as any,
+  // Only use PrismaAdapter when Google OAuth is enabled (needed for account linking)
+  // With credentials-only, JWT handles everything without DB adapter
+  ...(useGoogleOAuth ? { adapter: PrismaAdapter(db) as any } : {}),
   session: { strategy: "jwt" },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || process.env.NEXTAUTH_URL || "fallback-dev-secret-change-in-prod",
   pages: {
     signIn: "/login",
     newUser: "/onboarding",
@@ -56,11 +65,15 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-        const dbUser = await db.user.findUnique({ where: { id: user.id }, select: { isAdmin: true } });
-        token.isAdmin = dbUser?.isAdmin ?? false;
+        try {
+          const dbUser = await db.user.findUnique({ where: { id: user.id }, select: { isAdmin: true } });
+          token.isAdmin = dbUser?.isAdmin ?? false;
+        } catch {
+          token.isAdmin = false;
+        }
       }
       return token;
     },
