@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Zap, Clock, ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
+import { getSiteBranding } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,10 @@ export const metadata = {
 };
 
 export default async function BlogPage() {
-  const posts = await db.blogPost.findMany({
-    where: { published: true },
-    orderBy: { publishedAt: "desc" },
-  });
+  const [posts, branding] = await Promise.all([
+    db.blogPost.findMany({ where: { published: true }, orderBy: { publishedAt: "desc" } }),
+    getSiteBranding(),
+  ]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -22,10 +23,16 @@ export default async function BlogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">Tasknator</span>
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.siteName} className="h-8 max-w-[180px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">{branding.siteName}</span>
+                </>
+              )}
             </Link>
             <div className="flex items-center gap-3">
               <Link href="/" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Home</Link>
