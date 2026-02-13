@@ -1,0 +1,434 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH & USERS ────────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  locale        String    @default("en")
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships Membership[]
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── MULTI-TENANT WORKSPACE ─────────────────────────────────
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      PlanTier @default(STARTER)
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships      Membership[]
+  businessProfiles BusinessProfile[]
+  providerKeys     ProviderKey[]
+  subscription     Subscription?
+  usageMeters      UsageMeter[]
+  invoices         Invoice[]
+  auditLogs        AuditLog[]
+
+  @@map("workspaces")
+}
+
+model Membership {
+  id          String     @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        MemberRole @default(MEMBER)
+  createdAt   DateTime   @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@map("memberships")
+}
+
+// ─── BUSINESS PROFILE ────────────────────────────────────────
+enum PrimaryGoal {
+  MORE_LEADS
+  MORE_CONVERSIONS
+  IMPROVE_REVIEWS
+  REDUCE_COSTS
+}
+
+enum MainPain {
+  NO_CALLS
+  LOW_CONVERSIONS
+  BAD_REVIEWS
+  ADS_NOT_WORKING
+  EXPENSIVE_OPERATIONS
+}
+
+model BusinessProfile {
+  id          String @id @default(cuid())
+  workspaceId String
+
+  name        String
+  industry    String
+  country     String
+  city        String?
+  websiteUrl  String?
+  description String? @db.Text
+
+  facebookUrl       String?
+  instagramUrl      String?
+  tiktokUrl         String?
+  linkedinUrl       String?
+  googleBusinessUrl String?
+
+  revenueRange    String?
+  customersMonth  Int?
+  avgOrderValue   Float?
+  marketingBudget Float?
+  teamSize        Int?
+
+  primaryGoal PrimaryGoal?
+  mainPain    MainPain?
+
+  websiteText      String? @db.Text
+  screenshotUrl    String?
+  uploadedFileUrls String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditRuns   AuditRun[]
+  repairPlans RepairPlan[]
+
+  @@map("business_profiles")
+}
+
+// ─── AUDIT / DIAGNOSIS ──────────────────────────────────────
+enum AuditStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model AuditRun {
+  id                String      @id @default(cuid())
+  businessProfileId String
+  status            AuditStatus @default(QUEUED)
+  overallScore      Int?
+
+  websiteScore    Int?
+  seoScore        Int?
+  socialScore     Int?
+  offerScore      Int?
+  reputationScore Int?
+  localScore      Int?
+
+  rootCauseSummary String? @db.Text
+  rawResponse      String? @db.Text
+
+  progress   Int       @default(0)
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  findings        AuditFinding[]
+
+  @@map("audit_runs")
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+model AuditFinding {
+  id         String          @id @default(cuid())
+  auditRunId String
+  category   String
+  title      String
+  detail     String          @db.Text
+  severity   FindingSeverity
+  fixable    Boolean         @default(true)
+  fixed      Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+
+  auditRun AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
+
+  @@map("audit_findings")
+}
+
+// ─── REPAIR PLAN ─────────────────────────────────────────────
+enum PlanPhase {
+  DAY_30
+  DAY_60
+  DAY_90
+}
+
+model RepairPlan {
+  id                String   @id @default(cuid())
+  businessProfileId String
+  title             String
+  summary           String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  tasks           PlanTask[]
+  assets          Asset[]
+
+  @@map("repair_plans")
+}
+
+model PlanTask {
+  id           String    @id @default(cuid())
+  repairPlanId String
+  phase        PlanPhase
+  title        String
+  description  String    @db.Text
+  impact       String?
+  timeEstimate String?
+  completed    Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  repairPlan RepairPlan @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+
+  @@map("plan_tasks")
+}
+
+// ─── ASSETS ──────────────────────────────────────────────────
+enum AssetType {
+  WEBSITE_COPY
+  AD_COPY
+  EMAIL_SEQUENCE
+  SMS_SEQUENCE
+  REVIEW_REPLIES
+  SEO_PLAN
+  SALES_SCRIPTS
+  OFFER_PACKAGES
+  FAQ
+  WINBACK_MESSAGES
+  COST_CHECKLIST
+}
+
+model Asset {
+  id           String    @id @default(cuid())
+  repairPlanId String
+  type         AssetType
+  title        String
+  content      String    @db.Text
+  metadata     Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  repairPlan RepairPlan    @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+  versions   AssetVersion[]
+
+  @@map("assets")
+}
+
+model AssetVersion {
+  id        String   @id @default(cuid())
+  assetId   String
+  content   String   @db.Text
+  version   Int
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("asset_versions")
+}
+
+// ─── AI PROVIDER KEYS ───────────────────────────────────────
+enum AIProvider {
+  ANTHROPIC
+  OPENAI
+  GEMINI
+}
+
+model ProviderKey {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  provider     AIProvider
+  encryptedKey String     @db.Text
+  nonce        String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+  @@map("provider_keys")
+}
+
+// ─── BILLING ─────────────────────────────────────────────────
+enum PlanTier {
+  STARTER
+  PRO
+  AGENCY
+}
+
+model Subscription {
+  id                String    @id @default(cuid())
+  workspaceId       String    @unique
+  stripeCustomerId  String?
+  stripeSubId       String?   @unique
+  paypalSubId       String?   @unique
+  planTier          PlanTier  @default(STARTER)
+  status            String    @default("active")
+  currentPeriodEnd  DateTime?
+  cancelAtPeriodEnd Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model UsageMeter {
+  id          String   @id @default(cuid())
+  workspaceId String
+  month       String
+  auditsUsed  Int      @default(0)
+  tokensUsed  Int      @default(0)
+  exportsUsed Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, month])
+  @@map("usage_meters")
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  workspaceId String
+  stripeInvId String?   @unique
+  amount      Int
+  currency    String    @default("usd")
+  status      String
+  pdfUrl      String?
+  hostedUrl   String?
+  periodStart DateTime?
+  periodEnd   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+// ─── EXPORTS ─────────────────────────────────────────────────
+model ExportFile {
+  id        String   @id @default(cuid())
+  type      String
+  filename  String
+  url       String
+  size      Int?
+  createdAt DateTime @default(now())
+
+  @@map("export_files")
+}
+
+// ─── AUDIT LOG ───────────────────────────────────────────────
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  workspaceId String?
+  action      String
+  target      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+// ─── JOB TRACKING ────────────────────────────────────────────
+model JobRecord {
+  id         String    @id @default(cuid())
+  type       String
+  refId      String
+  status     String    @default("queued")
+  progress   Int       @default(0)
+  error      String?   @db.Text
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("job_records")
+}
