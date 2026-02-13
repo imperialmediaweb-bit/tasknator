@@ -1,44 +1,47 @@
-import sodium from "libsodium-wrappers";
+import crypto from "crypto";
 
-let initialized = false;
+const ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 16;
+const TAG_LENGTH = 16;
 
-async function ensureInit() {
-  if (!initialized) {
-    await sodium.ready;
-    initialized = true;
-  }
-}
-
-function getKey(): Uint8Array {
+function getKey(): Buffer {
   const hex = process.env.ENCRYPTION_KEY;
   if (!hex || hex.length !== 64) {
     throw new Error("ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
   }
-  return sodium.from_hex(hex);
+  return Buffer.from(hex, "hex");
 }
 
-export async function encrypt(plaintext: string): Promise<{ ciphertext: string; nonce: string }> {
-  await ensureInit();
+export async function encrypt(
+  plaintext: string
+): Promise<{ ciphertext: string; nonce: string }> {
   const key = getKey();
-  const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-  const encrypted = sodium.crypto_secretbox_easy(
-    sodium.from_string(plaintext),
-    nonce,
-    key
-  );
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+
+  let encrypted = cipher.update(plaintext, "utf8", "base64");
+  encrypted += cipher.final("base64");
+  const tag = cipher.getAuthTag();
+
   return {
-    ciphertext: sodium.to_base64(encrypted),
-    nonce: sodium.to_base64(nonce),
+    ciphertext: encrypted + "." + tag.toString("base64"),
+    nonce: iv.toString("base64"),
   };
 }
 
-export async function decrypt(ciphertext: string, nonce: string): Promise<string> {
-  await ensureInit();
+export async function decrypt(
+  ciphertext: string,
+  nonce: string
+): Promise<string> {
   const key = getKey();
-  const decrypted = sodium.crypto_secretbox_open_easy(
-    sodium.from_base64(ciphertext),
-    sodium.from_base64(nonce),
-    key
-  );
-  return sodium.to_string(decrypted);
+  const iv = Buffer.from(nonce, "base64");
+  const [encData, tagStr] = ciphertext.split(".");
+  const tag = Buffer.from(tagStr, "base64");
+
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(tag);
+
+  let decrypted = decipher.update(encData, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
 }
