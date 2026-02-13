@@ -72,7 +72,7 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
 
     let aiResponse: any;
     
-    if (providerKey || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY) {
+    if (providerKey || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY) {
       // Use AI provider
       const { createProvider, generateWithFallback } = await import("@/lib/ai/provider");
       const { decrypt } = await import("@/lib/crypto");
@@ -86,6 +86,7 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
       }
       if (process.env.ANTHROPIC_API_KEY) providers.push({ type: "ANTHROPIC", apiKey: process.env.ANTHROPIC_API_KEY });
       if (process.env.OPENAI_API_KEY) providers.push({ type: "OPENAI", apiKey: process.env.OPENAI_API_KEY });
+      if (process.env.GEMINI_API_KEY) providers.push({ type: "GEMINI", apiKey: process.env.GEMINI_API_KEY });
 
       await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 30 } });
 
