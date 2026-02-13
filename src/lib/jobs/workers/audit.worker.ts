@@ -104,7 +104,7 @@ async function processAudit(job: Job) {
 }
 
 const worker = new Worker("audit", processAudit, {
-  connection,
+  connection: connection as any,
   concurrency: 3,
 });
 

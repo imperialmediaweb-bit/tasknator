@@ -2,20 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-});
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+import { getStripe } from "@/lib/billing/stripe";
 
 export async function POST(req: NextRequest) {
+  const stripe = getStripe();
   const body = await req.text();
   const signature = headers().get("stripe-signature")!;
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
