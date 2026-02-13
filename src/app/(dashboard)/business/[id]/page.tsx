@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowRight, BarChart3, Building2, Calendar, ExternalLink, FileText, Globe, MapPin, RefreshCw, Target, TrendingUp, Zap } from "lucide-react";
+import { FindingFixButton } from "./finding-fix-button";
 
 export default async function BusinessDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -126,10 +127,13 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                       <h4 className="font-medium text-gray-900 text-sm">{finding.title}</h4>
                       <p className="text-xs text-gray-500 mt-1 line-clamp-2">{finding.detail}</p>
                     </div>
-                    {finding.fixable && (
-                      <button className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors flex-shrink-0">
-                        Fix Now
-                      </button>
+                    {finding.fixable && !finding.fixed && (
+                      <FindingFixButton findingId={finding.id} />
+                    )}
+                    {finding.fixed && (
+                      <span className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-medium flex-shrink-0">
+                        Fixed
+                      </span>
                     )}
                   </div>
                 </div>

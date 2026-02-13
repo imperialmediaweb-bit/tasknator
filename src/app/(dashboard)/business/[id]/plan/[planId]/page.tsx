@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Circle, Clock, Download, FileText, Sparkles, TrendingUp } from "lucide-react";
+import { TaskToggle } from "./task-toggle";
 
 export default async function PlanDetailPage({
   params,
@@ -93,13 +94,7 @@ export default async function PlanDetailPage({
             <div className="divide-y divide-gray-50">
               {phaseTasks.map((task) => (
                 <div key={task.id} className="p-4 flex items-start gap-3">
-                  <div className="mt-0.5">
-                    {task.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-gray-300" />
-                    )}
-                  </div>
+                  <TaskToggle taskId={task.id} initialCompleted={task.completed} />
                   <div className="flex-1">
                     <h4 className={`font-medium text-sm ${task.completed ? "text-gray-400 line-through" : "text-gray-900"}`}>
                       {task.title}
