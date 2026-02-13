@@ -33,6 +33,9 @@ const API_KEY_FIELDS = [
   { key: "GOOGLE_CLIENT_SECRET", label: "Google Client Secret", desc: "For Google OAuth login", group: "Google OAuth" },
   { key: "STRIPE_SECRET_KEY", label: "Stripe Secret Key", desc: "For payment processing", group: "Payments" },
   { key: "STRIPE_WEBHOOK_SECRET", label: "Stripe Webhook Secret", desc: "For Stripe webhook verification", group: "Payments" },
+  { key: "PAYPAL_CLIENT_ID", label: "PayPal Client ID", desc: "For PayPal payment processing", group: "Payments" },
+  { key: "PAYPAL_CLIENT_SECRET", label: "PayPal Client Secret", desc: "For PayPal payment processing", group: "Payments" },
+  { key: "PAYPAL_WEBHOOK_ID", label: "PayPal Webhook ID", desc: "For PayPal webhook verification", group: "Payments" },
 ];
 
 export default function AdminPage() {

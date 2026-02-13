@@ -2,17 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getStripe } from "@/lib/billing/stripe";
+import { getStripeAsync, PLANS, PlanKey } from "@/lib/billing/stripe";
 
 export async function POST(req: NextRequest) {
-  const stripe = getStripe();
   try {
+    const stripe = await getStripeAsync();
+
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { priceId, workspaceId } = await req.json();
+    const body = await req.json();
+    const { workspaceId } = body;
+
+    // Support both priceId (direct) and planTier (lookup)
+    let priceId = body.priceId;
+    if (!priceId && body.planTier) {
+      const plan = PLANS[body.planTier as PlanKey];
+      if (!plan) {
+        return NextResponse.json({ error: "Invalid plan tier" }, { status: 400 });
+      }
+      priceId = plan.stripePriceId;
+    }
+
+    if (!priceId) {
+      return NextResponse.json({ error: "priceId or planTier required" }, { status: 400 });
+    }
 
     const user = await db.user.findUnique({ where: { email: session.user.email } });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -43,6 +59,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error: any) {
     console.error("Checkout error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

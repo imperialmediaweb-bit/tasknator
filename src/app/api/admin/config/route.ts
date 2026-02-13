@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET",
       "NEXTAUTH_SECRET", "NEXTAUTH_URL",
       "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET",
+      "PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_WEBHOOK_ID",
     ];
 
     if (!allowedKeys.includes(key)) {

@@ -1,10 +1,22 @@
 import Stripe from "stripe";
+import { db } from "@/lib/db";
+
+async function getStripeKey(): Promise<string> {
+  // Try DB first, then env var
+  const row = await db.systemConfig.findUnique({ where: { key: "STRIPE_SECRET_KEY" } }).catch(() => null);
+  return row?.value || process.env.STRIPE_SECRET_KEY || "";
+}
 
 let _stripe: Stripe | null = null;
+let _stripeKey: string = "";
 
-export function getStripe() {
-  if (!_stripe) {
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+export async function getStripeAsync(): Promise<Stripe> {
+  const key = await getStripeKey();
+  if (!key) throw new Error("Stripe secret key not configured");
+
+  if (!_stripe || key !== _stripeKey) {
+    _stripeKey = key;
+    _stripe = new Stripe(key, {
       apiVersion: "2025-02-24.acacia",
       typescript: true,
     });
@@ -12,11 +24,17 @@ export function getStripe() {
   return _stripe;
 }
 
-export const stripe = new Proxy({} as Stripe, {
-  get(_, prop) {
-    return (getStripe() as any)[prop];
-  },
-});
+export function getStripe() {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) throw new Error("Stripe secret key not configured");
+    _stripe = new Stripe(key, {
+      apiVersion: "2025-02-24.acacia",
+      typescript: true,
+    });
+  }
+  return _stripe;
+}
 
 export const PLANS = {
   STARTER: {
@@ -65,6 +83,7 @@ export async function createCheckoutSession(params: {
   successUrl: string;
   cancelUrl: string;
 }) {
+  const stripe = await getStripeAsync();
   return stripe.checkout.sessions.create({
     customer: params.customerId,
     mode: "subscription",
@@ -78,6 +97,7 @@ export async function createCheckoutSession(params: {
 }
 
 export async function createCustomerPortalSession(customerId: string, returnUrl: string) {
+  const stripe = await getStripeAsync();
   return stripe.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
