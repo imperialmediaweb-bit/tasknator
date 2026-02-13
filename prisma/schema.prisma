@@ -460,3 +460,12 @@ model JobRecord {
 
   @@map("job_records")
 }
+
+// ─── SYSTEM CONFIG (Admin-managed key-value) ────────────────
+model SystemConfig {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
