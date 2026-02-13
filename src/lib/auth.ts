@@ -43,12 +43,15 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.sub;
+        (session.user as any).isAdmin = token.isAdmin;
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.sub = user.id;
+        const dbUser = await db.user.findUnique({ where: { id: user.id }, select: { isAdmin: true } });
+        token.isAdmin = dbUser?.isAdmin ?? false;
       }
       return token;
     },
