@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Zap, Clock, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { marked } from "marked";
+import { getSiteBranding } from "@/lib/branding";
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const post = await db.blogPost.findUnique({ where: { slug: params.slug } });
@@ -14,9 +15,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await db.blogPost.findUnique({
-    where: { slug: params.slug, published: true },
-  });
+  const [post, branding] = await Promise.all([
+    db.blogPost.findUnique({ where: { slug: params.slug, published: true } }),
+    getSiteBranding(),
+  ]);
 
   if (!post) notFound();
 
@@ -29,10 +31,16 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">Tasknator</span>
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.siteName} className="h-8 max-w-[180px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">{branding.siteName}</span>
+                </>
+              )}
             </Link>
             <div className="flex items-center gap-3">
               <Link href="/blog" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>

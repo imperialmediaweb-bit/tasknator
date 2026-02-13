@@ -9,7 +9,7 @@ import {
   Zap, LogOut
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -27,22 +27,41 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = (session?.user as any)?.isAdmin;
+  const [branding, setBranding] = useState({ siteName: "Tasknator", logoUrl: "" });
+
+  useEffect(() => {
+    fetch("/api/branding").then(r => r.json()).then(d => setBranding(d)).catch(() => {});
+  }, []);
+
+  const DefaultLogo = () => (
+    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center flex-shrink-0">
+      <Zap className="w-5 h-5 text-white" />
+    </div>
+  );
+
+  const Logo = () => branding.logoUrl ? (
+    <img src={branding.logoUrl} alt={branding.siteName} className="h-8 max-w-[140px] object-contain" />
+  ) : (
+    <DefaultLogo />
+  );
 
   return (
     <aside className={`${collapsed ? "w-16" : "w-64"} h-screen bg-white border-r border-slate-100 flex flex-col transition-all duration-300 sticky top-0`}>
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100">
         {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-slate-900">Tasknator</span>
+          <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+            <Logo />
+            {!branding.logoUrl && <span className="font-bold text-slate-900 truncate">{branding.siteName}</span>}
           </Link>
         )}
         {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center mx-auto">
-            <Zap className="w-5 h-5 text-white" />
+          <div className="mx-auto">
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.siteName} className="h-8 w-8 object-contain" />
+            ) : (
+              <DefaultLogo />
+            )}
           </div>
         )}
         <button

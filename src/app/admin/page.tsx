@@ -688,6 +688,37 @@ export default function AdminPage() {
             <p className="text-sm text-blue-700 mt-0.5">Customize the landing page hero text and toggle sections on/off.</p>
           </div>
 
+          {/* Branding / Logo */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+            <h3 className="font-semibold text-slate-900">Branding</h3>
+            {homepageConfig["SITE_LOGO_URL"] && (
+              <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl">
+                <img src={homepageConfig["SITE_LOGO_URL"]} alt="Logo" className="h-10 max-w-[200px] object-contain" />
+                <span className="text-xs text-slate-400">Current logo</span>
+              </div>
+            )}
+            {[
+              { key: "SITE_NAME", label: "Site Name", placeholder: "Tasknator" },
+              { key: "SITE_LOGO_URL", label: "Logo URL", placeholder: "https://yourdomain.com/logo.png" },
+              { key: "SITE_TAGLINE", label: "Tagline", placeholder: "AI that fixes business bottlenecks" },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="text-xs font-medium text-slate-500 mb-1 block">{f.label}</label>
+                <div className="flex gap-2">
+                  <input
+                    value={homepageConfig[f.key] || ""}
+                    onChange={e => setHomepageConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="flex-1 h-10 px-4 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  <button onClick={() => saveHomepageField(f.key, homepageConfig[f.key] || "")} disabled={hpSaving} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                    <Save className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
             <h3 className="font-semibold text-slate-900">Hero Section</h3>
             {[

@@ -2,7 +2,8 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { marked } from "marked";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Zap } from "lucide-react";
+import { getSiteBranding } from "@/lib/branding";
 
 export default async function CustomPageView({ params }: { params: { slug: string } }) {
   const page = await db.customPage.findUnique({
@@ -13,11 +14,11 @@ export default async function CustomPageView({ params }: { params: { slug: strin
 
   const htmlContent = marked(page.content);
 
-  // Load header/footer menus
-  const menuItems = await db.menuItem.findMany({
-    where: { visible: true },
-    orderBy: { sortOrder: "asc" },
-  });
+  // Load header/footer menus + branding
+  const [menuItems, branding] = await Promise.all([
+    db.menuItem.findMany({ where: { visible: true }, orderBy: { sortOrder: "asc" } }),
+    getSiteBranding(),
+  ]);
   const headerItems = menuItems.filter(i => i.location === "HEADER");
   const footerItems = menuItems.filter(i => i.location === "FOOTER");
 
@@ -26,8 +27,17 @@ export default async function CustomPageView({ params }: { params: { slug: strin
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-            Tasknator
+          <Link href="/" className="flex items-center gap-2">
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.siteName} className="h-8 max-w-[180px] object-contain" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-gray-900">{branding.siteName}</span>
+              </>
+            )}
           </Link>
           <div className="flex items-center gap-6">
             {headerItems.map(item => (

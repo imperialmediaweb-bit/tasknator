@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Globe, Sparkles, ChevronRight, Play, ChevronDown, Mail } from "lucide-react";
+import { getSiteBranding } from "@/lib/branding";
 
 const FEATURES = [
   {
@@ -158,7 +159,9 @@ function IconComponent({ name, className }: { name: string; className?: string }
   return <Icon className={className} />;
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const branding = await getSiteBranding();
+
   return (
     <div className="relative overflow-hidden">
       {/* Navigation */}
@@ -166,10 +169,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">Tasknator</span>
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.siteName} className="h-8 max-w-[180px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-gray-900">{branding.siteName}</span>
+                </>
+              )}
             </div>
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
@@ -574,11 +583,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">Tasknator</span>
-              <span className="text-sm text-gray-400 ml-2">AI that fixes business bottlenecks</span>
+              {branding.logoUrl ? (
+                <img src={branding.logoUrl} alt={branding.siteName} className="h-7 max-w-[150px] object-contain" />
+              ) : (
+                <>
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-bold text-gray-900">{branding.siteName}</span>
+                </>
+              )}
+              <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
               <Link href="/blog" className="hover:text-gray-900 transition-colors">Blog</Link>
