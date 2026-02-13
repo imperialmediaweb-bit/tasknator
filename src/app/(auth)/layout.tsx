@@ -2,10 +2,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen flex">
       {/* Left panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 via-violet-600 to-purple-700 p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-600 via-purple-600 to-rose-500 p-12 flex-col justify-between relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-20 left-20 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-rose-400/10 rounded-full blur-3xl" />
         </div>
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
@@ -21,10 +21,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-4xl font-bold text-white leading-tight">
             AI that fixes<br />business bottlenecks
           </h1>
-          <p className="text-blue-100 text-lg max-w-md">
+          <p className="text-indigo-100 text-lg max-w-md">
             Diagnose why your business is underperforming and get an actionable recovery plan with ready-to-use assets.
           </p>
-          <div className="flex items-center gap-6 text-sm text-blue-200">
+          <div className="flex items-center gap-6 text-sm text-indigo-200">
             <div className="flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
               Free audit included
@@ -35,8 +35,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </div>
-        <div className="relative text-sm text-blue-200">
-          &copy; 2024 Tasknator. All rights reserved.
+        <div className="relative text-sm text-indigo-200">
+          &copy; 2026 Tasknator. All rights reserved.
         </div>
       </div>
       {/* Right panel - form */}

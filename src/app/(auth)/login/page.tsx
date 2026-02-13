@@ -65,15 +65,15 @@ export default function LoginPage() {
     <div>
       <div className="mb-8">
         <div className="lg:hidden flex items-center gap-2 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
           <span className="text-xl font-bold">Tasknator</span>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-        <p className="text-gray-500 mt-1">Sign in to your account to continue</p>
+        <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
+        <p className="text-slate-500 mt-1">Sign in to your account to continue</p>
       </div>
 
       {/* Quick Access */}
@@ -81,39 +81,39 @@ export default function LoginPage() {
         <button
           onClick={() => handleQuickLogin(DEMO_ACCOUNT, "/dashboard")}
           disabled={loading}
-          className="w-full p-3.5 rounded-xl border-2 border-dashed border-violet-200 bg-violet-50/50 hover:bg-violet-50 hover:border-violet-300 transition-all text-left group disabled:opacity-50"
+          className="w-full p-3.5 rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/50 hover:bg-purple-50 hover:border-purple-300 transition-all text-left group disabled:opacity-50"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-violet-900">Try Demo Account</div>
-              <div className="text-xs text-violet-600">Premium plan with sample data</div>
+              <div className="text-sm font-semibold text-purple-900">Try Demo Account</div>
+              <div className="text-xs text-purple-600">Premium plan with sample data</div>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-200 text-violet-700 font-bold">PRO</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-200 text-purple-700 font-bold">PRO</span>
           </div>
         </button>
 
         <button
           onClick={() => handleQuickLogin(ADMIN_ACCOUNT, "/admin")}
           disabled={loading}
-          className="w-full p-3.5 rounded-xl border-2 border-dashed border-red-200 bg-red-50/50 hover:bg-red-50 hover:border-red-300 transition-all text-left group disabled:opacity-50"
+          className="w-full p-3.5 rounded-xl border-2 border-dashed border-amber-200 bg-amber-50/50 hover:bg-amber-50 hover:border-amber-300 transition-all text-left group disabled:opacity-50"
         >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-red-900">Super Admin</div>
-              <div className="text-xs text-red-600">Full system access &amp; management</div>
+              <div className="text-sm font-semibold text-amber-900">Super Admin</div>
+              <div className="text-xs text-amber-600">Full system access &amp; management</div>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-200 text-red-700 font-bold">ADMIN</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200 text-amber-700 font-bold">ADMIN</span>
           </div>
         </button>
       </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
       {/* Google OAuth */}
       <button
         onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-        className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
@@ -133,49 +133,49 @@ export default function LoginPage() {
       </button>
 
       <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-        <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-gray-400">or sign in with email</span></div>
+        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+        <div className="relative flex justify-center text-sm"><span className="bg-white px-4 text-slate-400">or sign in with email</span></div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
+        <div className="mb-4 p-3 rounded-lg bg-rose-50 text-rose-700 text-sm">{error}</div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             required
-            className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter your password"
             required
-            className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50"
+          className="w-full h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-gray-500">
+      <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-blue-600 font-medium hover:underline">
+        <Link href="/register" className="text-indigo-600 font-medium hover:underline">
           Sign up free
         </Link>
       </p>
