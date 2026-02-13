@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { getStripe } from "@/lib/billing/stripe";
+import { getStripeAsync } from "@/lib/billing/stripe";
 
 export async function POST(req: NextRequest) {
-  const stripe = getStripe();
+  const stripe = await getStripeAsync();
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
