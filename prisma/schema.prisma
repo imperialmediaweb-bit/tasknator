@@ -428,3 +428,34 @@ model JobRecord {
   finishedAt DateTime?
   createdAt  DateTime  @default(now())
 }
+
+// ─── CMS: Menus, Pages ──────────────────────────────────
+
+enum MenuLocation {
+  HEADER
+  FOOTER
+}
+
+model MenuItem {
+  id        String       @id @default(cuid())
+  location  MenuLocation
+  label     String
+  href      String
+  sortOrder Int          @default(0)
+  visible   Boolean      @default(true)
+  openNew   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model CustomPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String   @db.Text
+  metaTitle   String?
+  metaDesc    String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
