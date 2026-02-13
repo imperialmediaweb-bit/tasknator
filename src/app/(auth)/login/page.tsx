@@ -5,6 +5,16 @@ import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+const DEMO_ACCOUNT = {
+  email: "demo@tasknator.com",
+  password: "demo1234",
+};
+
+const ADMIN_ACCOUNT = {
+  email: "admin@tasknator.com",
+  password: "admin1234",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -31,6 +41,26 @@ export default function LoginPage() {
     }
   }
 
+  function handleQuickLogin(account: { email: string; password: string }, redirectTo: string) {
+    setEmail(account.email);
+    setPassword(account.password);
+    setLoading(true);
+    setError("");
+
+    signIn("credentials", {
+      email: account.email,
+      password: account.password,
+      redirect: false,
+    }).then((result) => {
+      if (result?.error) {
+        setError("Account unavailable. Try again later.");
+        setLoading(false);
+      } else {
+        router.push(redirectTo);
+      }
+    });
+  }
+
   return (
     <div>
       <div className="mb-8">
@@ -44,6 +74,48 @@ export default function LoginPage() {
         </div>
         <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
         <p className="text-gray-500 mt-1">Sign in to your account to continue</p>
+      </div>
+
+      {/* Quick Access */}
+      <div className="space-y-2 mb-6">
+        <button
+          onClick={() => handleQuickLogin(DEMO_ACCOUNT, "/dashboard")}
+          disabled={loading}
+          className="w-full p-3.5 rounded-xl border-2 border-dashed border-violet-200 bg-violet-50/50 hover:bg-violet-50 hover:border-violet-300 transition-all text-left group disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-violet-900">Try Demo Account</div>
+              <div className="text-xs text-violet-600">Premium plan with sample data</div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-200 text-violet-700 font-bold">PRO</span>
+          </div>
+        </button>
+
+        <button
+          onClick={() => handleQuickLogin(ADMIN_ACCOUNT, "/admin")}
+          disabled={loading}
+          className="w-full p-3.5 rounded-xl border-2 border-dashed border-red-200 bg-red-50/50 hover:bg-red-50 hover:border-red-300 transition-all text-left group disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-red-900">Super Admin</div>
+              <div className="text-xs text-red-600">Full system access &amp; management</div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-200 text-red-700 font-bold">ADMIN</span>
+          </div>
+        </button>
       </div>
 
       {/* Google OAuth */}

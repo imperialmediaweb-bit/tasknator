@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Users, Globe, Sparkles, ChevronRight, Play, ArrowUpRight } from "lucide-react";
+import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Globe, Sparkles, ChevronRight, Play, ChevronDown, Mail } from "lucide-react";
 
 const FEATURES = [
   {
@@ -78,6 +78,80 @@ const STATS = [
   { value: "<3min", label: "Time to First Audit" },
 ];
 
+const TESTIMONIALS = [
+  {
+    name: "Sarah Chen",
+    role: "Owner, Bloom Studio",
+    quote: "Tasknator found 14 critical issues I had no idea about. After fixing them, my online orders went up 180% in just 6 weeks. It paid for itself on day one.",
+    rating: 5,
+  },
+  {
+    name: "Marcus Johnson",
+    role: "CEO, TechFix Pro",
+    quote: "We were spending $3K/month on a marketing agency that couldn't tell us what was actually wrong. Tasknator diagnosed everything in 3 minutes for $29/month.",
+    rating: 5,
+  },
+  {
+    name: "Emily Rodriguez",
+    role: "Founder, Casa Bella Interiors",
+    quote: "The 30/60/90 day plan was a game changer. Instead of feeling overwhelmed, I knew exactly what to fix each week. Revenue is up 2.1x since we started.",
+    rating: 5,
+  },
+  {
+    name: "David Park",
+    role: "Managing Director, Peak Fitness",
+    quote: "Our Google reviews went from 3.2 to 4.7 stars using the Reputation Fixer. New sign-ups increased 65% the following month. Incredible tool.",
+    rating: 5,
+  },
+  {
+    name: "Lisa Thompson",
+    role: "Agency Owner, BrightPath Digital",
+    quote: "I use the Agency plan to audit all my clients. It saves my team 20+ hours per client on initial diagnostics. White-label exports are the cherry on top.",
+    rating: 5,
+  },
+  {
+    name: "James O'Brien",
+    role: "Owner, Craft & Cork Bistro",
+    quote: "I was skeptical about AI auditing my restaurant business. But the findings were spot-on — missing Google Business profile, no email list, terrible meta descriptions. Fixed them all.",
+    rating: 5,
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: "What is Tasknator?",
+    a: "Tasknator is an AI-powered platform that diagnoses what's wrong with your business's online presence (website, SEO, social, offers, reputation) and generates a complete recovery plan with ready-to-use marketing assets.",
+  },
+  {
+    q: "How does the AI audit work?",
+    a: "You provide your business details, website URL, and social profiles. Our AI (powered by Claude, GPT-4, and Gemini) analyzes everything and generates a scorecard across 6 categories, identifies specific issues with severity ratings, and creates a prioritized 30/60/90-day repair plan.",
+  },
+  {
+    q: "How long does an audit take?",
+    a: "Most audits complete in under 3 minutes. You'll receive your full scorecard, findings list, and repair plan immediately after the audit finishes.",
+  },
+  {
+    q: "Is there a free trial?",
+    a: "Yes! All plans include a 7-day free trial. You can run your first audit completely free with no credit card required.",
+  },
+  {
+    q: "What kind of businesses is this for?",
+    a: "Tasknator works for any business with an online presence — restaurants, salons, fitness studios, agencies, SaaS companies, e-commerce stores, professional services, and more. If you have a website and want more customers, it's for you.",
+  },
+  {
+    q: "Can I use Tasknator for my clients?",
+    a: "Absolutely! Our Agency plan ($79/month) supports up to 25 business profiles and 100 audits/month with white-label exports and team access. Many marketing agencies use Tasknator to onboard and diagnose clients.",
+  },
+  {
+    q: "What assets does Tasknator generate?",
+    a: "Depending on your audit findings, Tasknator can generate: website copy, ad scripts (Meta & Google), email sequences, SMS sequences, review reply templates, SEO plans, sales scripts, offer packages, FAQs, win-back messages, and cost checklists.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. No contracts, no commitments. Cancel anytime from your billing page and you won't be charged again. Your data remains accessible until the end of your billing period.",
+  },
+];
+
 function IconComponent({ name, className }: { name: string; className?: string }) {
   const icons: Record<string, any> = { Target, FileText, Sparkles, BarChart3, Star, TrendingUp };
   const Icon = icons[name] || Zap;
@@ -101,6 +175,8 @@ export default function HomePage() {
               <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
               <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
+              <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
+              <Link href="/blog" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
             </div>
             <div className="flex items-center gap-3">
               <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
@@ -119,7 +195,6 @@ export default function HomePage() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-32 overflow-hidden">
-        {/* Background decorations */}
         <div className="absolute inset-0 grid-pattern" />
         <div className="absolute top-20 left-1/4 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl" />
         <div className="absolute top-40 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full blur-3xl" />
@@ -127,14 +202,12 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium mb-8 animate-fade-in">
               <Sparkles className="w-4 h-4" />
               AI-Powered Business Diagnostics
               <ChevronRight className="w-3 h-3" />
             </div>
 
-            {/* Headline */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 animate-slide-up">
               Your business is
               <span className="text-gradient"> broken.</span>
@@ -143,12 +216,10 @@ export default function HomePage() {
               <span className="text-gradient"> AI.</span>
             </h1>
 
-            {/* Subheadline */}
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
               Tasknator diagnoses why your business isn&apos;t performing and generates a complete recovery plan with ready-to-use marketing assets — in minutes, not months.
             </p>
 
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
               <Link
                 href="/register"
@@ -164,7 +235,6 @@ export default function HomePage() {
               </a>
             </div>
 
-            {/* Social proof */}
             <div className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500 animate-fade-in" style={{ animationDelay: "0.4s" }}>
               <div className="flex items-center gap-1">
                 <Shield className="w-4 h-4 text-green-500" />
@@ -194,7 +264,6 @@ export default function HomePage() {
               </div>
               <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 p-8 min-h-[400px]">
                 <div className="grid grid-cols-12 gap-4">
-                  {/* Sidebar mockup */}
                   <div className="col-span-3 space-y-3">
                     <div className="h-8 bg-white rounded-lg shadow-sm border border-gray-100" />
                     <div className="space-y-2">
@@ -203,7 +272,6 @@ export default function HomePage() {
                       ))}
                     </div>
                   </div>
-                  {/* Main content mockup */}
                   <div className="col-span-9 space-y-4">
                     <div className="flex gap-4">
                       {["Overall: 42/100", "Website: 35", "SEO: 28", "Social: 55"].map((label, i) => (
@@ -229,7 +297,6 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            {/* Glow effect */}
             <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-purple-500/10 rounded-3xl blur-2xl" />
           </div>
         </div>
@@ -307,8 +374,51 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section id="testimonials" className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-sm font-medium mb-4">
+              Trusted by Thousands
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Real businesses, <span className="text-gradient">real results</span>
+            </h2>
+            <p className="text-gray-600 text-lg">
+              See what business owners are saying about Tasknator.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <div
+                key={t.name}
+                className="p-6 rounded-2xl border border-gray-100 bg-white hover:shadow-lg hover:border-blue-50 transition-all duration-300"
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 text-sm leading-relaxed mb-6">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
+                    {t.name.split(" ").map(n => n[0]).join("")}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                    <div className="text-xs text-gray-500">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
-      <section id="pricing" className="py-24">
+      <section id="pricing" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-4">
@@ -375,6 +485,67 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section id="faq" className="py-24">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-sm font-medium mb-4">
+              FAQ
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Frequently asked <span className="text-gradient">questions</span>
+            </h2>
+          </div>
+          <div className="space-y-4">
+            {FAQ_ITEMS.map((item, i) => (
+              <details
+                key={i}
+                className="group rounded-2xl border border-gray-100 bg-white overflow-hidden"
+              >
+                <summary className="flex items-center justify-between cursor-pointer p-6 text-left">
+                  <span className="text-sm font-semibold text-gray-900 pr-4">{item.q}</span>
+                  <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 group-open:rotate-180 transition-transform" />
+                </summary>
+                <div className="px-6 pb-6 -mt-2">
+                  <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter */}
+      <section id="newsletter" className="py-24 bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center mx-auto mb-6">
+            <Mail className="w-7 h-7 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold mb-3">
+            Stay in the loop
+          </h2>
+          <p className="text-gray-600 mb-8">
+            Get weekly tips on fixing business bottlenecks, new features, and case studies. No spam, unsubscribe anytime.
+          </p>
+          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              name="email"
+              placeholder="you@company.com"
+              required
+              className="flex-1 h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              type="submit"
+              className="h-12 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+            >
+              Subscribe
+            </button>
+          </form>
+          <p className="text-xs text-gray-400 mt-4">Join 3,200+ business owners. Unsubscribe anytime.</p>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 bg-gray-900 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -410,6 +581,7 @@ export default function HomePage() {
               <span className="text-sm text-gray-400 ml-2">AI that fixes business bottlenecks</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
+              <Link href="/blog" className="hover:text-gray-900 transition-colors">Blog</Link>
               <a href="#" className="hover:text-gray-900 transition-colors">Privacy</a>
               <a href="#" className="hover:text-gray-900 transition-colors">Terms</a>
               <a href="#" className="hover:text-gray-900 transition-colors">Contact</a>
