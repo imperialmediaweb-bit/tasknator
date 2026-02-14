@@ -8,7 +8,7 @@
  */
 import { execSync } from "child_process";
 
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 2000;
 
 function sleep(ms) {
@@ -43,7 +43,6 @@ async function ensureDb() {
     "[ensure-db] All attempts failed. Server will start without schema push."
   );
   console.error("[ensure-db] Hit GET /api/setup to diagnose & recover.");
-  // Exit 0 so the server still starts (health-checks need it alive).
   process.exit(0);
 }
 
