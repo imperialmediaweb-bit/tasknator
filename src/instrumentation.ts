@@ -1,6 +1,15 @@
 export async function register() {
   // Only run on Node.js runtime (not edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    // Step 1: Ensure database tables exist (no CLI dependency)
+    try {
+      const { ensureSchema } = await import("./lib/ensure-schema");
+      await ensureSchema();
+    } catch (e) {
+      console.error("[bootstrap] Schema check failed (non-fatal):", e);
+    }
+
+    // Step 2: Seed demo data
     try {
       const { db } = await import("./lib/db");
       const bcrypt = await import("bcryptjs");

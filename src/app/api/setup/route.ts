@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ensureSchema } from "@/lib/ensure-schema";
 import bcrypt from "bcryptjs";
-import { execSync } from "child_process";
 
 export const dynamic = "force-dynamic";
 
@@ -17,31 +17,19 @@ export async function GET() {
     return NextResponse.json({ log, status: "db_error" });
   }
 
-  // 2. Check if User table exists — if not, attempt schema push
+  // 2. Ensure schema exists (auto-creates tables from init.sql if missing)
   try {
-    const userCount = await db.user.count();
-    log.push(`✅ User table exists (${userCount} users)`);
-  } catch (e: any) {
-    log.push(`⚠️ User table missing — attempting schema push...`);
-    try {
-      execSync("npx prisma db push --skip-generate", {
-        timeout: 60_000,
-        stdio: "pipe",
-      });
-      log.push("✅ Schema push succeeded");
-    } catch (pushErr: any) {
-      log.push(`❌ Schema push failed: ${pushErr.message?.slice(0, 200)}`);
-      return NextResponse.json({ log, status: "schema_error" });
-    }
-
-    // Verify tables were created
-    try {
+    const ok = await ensureSchema();
+    if (ok) {
       const userCount = await db.user.count();
-      log.push(`✅ User table now exists (${userCount} users)`);
-    } catch (verifyErr: any) {
-      log.push(`❌ User table still missing after push: ${verifyErr.message}`);
+      log.push(`✅ Schema OK — User table has ${userCount} users`);
+    } else {
+      log.push("❌ Schema creation failed");
       return NextResponse.json({ log, status: "schema_error" });
     }
+  } catch (e: any) {
+    log.push(`❌ Schema error: ${e.message?.slice(0, 200)}`);
+    return NextResponse.json({ log, status: "schema_error" });
   }
 
   // 3. Create admin if missing
