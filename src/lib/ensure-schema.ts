@@ -23,10 +23,14 @@ export async function ensureSchema(): Promise<boolean> {
     const sql = readFileSync(sqlPath, "utf-8");
 
     // Split into individual statements (separated by semicolons)
+    // Strip SQL comments before checking if a segment has real content
     const statements = sql
       .split(";")
       .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith("--"));
+      .filter((s) => {
+        const withoutComments = s.replace(/--[^\n]*/g, "").trim();
+        return withoutComments.length > 0;
+      });
 
     for (const stmt of statements) {
       try {
