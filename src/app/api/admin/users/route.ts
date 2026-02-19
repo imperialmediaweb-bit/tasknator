@@ -49,15 +49,44 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { userId, isAdmin: setAdmin } = await req.json();
+    const body = await req.json();
+    const { userId } = body;
     if (!userId) {
       return NextResponse.json({ error: "userId required" }, { status: 400 });
     }
 
-    await db.user.update({
-      where: { id: userId },
-      data: { isAdmin: !!setAdmin },
-    });
+    // Handle plan assignment
+    if (body.plan !== undefined) {
+      const validPlans = ["STARTER", "PRO", "AGENCY"];
+      if (!validPlans.includes(body.plan)) {
+        return NextResponse.json({ error: "Invalid plan. Must be STARTER, PRO, or AGENCY" }, { status: 400 });
+      }
+
+      // Find user's workspace through membership
+      const membership = await db.membership.findFirst({
+        where: { userId },
+        select: { workspaceId: true },
+      });
+
+      if (!membership) {
+        return NextResponse.json({ error: "User has no workspace" }, { status: 400 });
+      }
+
+      await db.workspace.update({
+        where: { id: membership.workspaceId },
+        data: { plan: body.plan },
+      });
+
+      return NextResponse.json({ success: true, message: `Plan updated to ${body.plan}` });
+    }
+
+    // Handle admin toggle
+    if (body.isAdmin !== undefined) {
+      await db.user.update({
+        where: { id: userId },
+        data: { isAdmin: !!body.isAdmin },
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

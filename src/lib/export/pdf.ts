@@ -1,4 +1,35 @@
 import PDFDocument from "pdfkit";
+import path from "path";
+import fs from "fs";
+
+// PDFKit's built-in fonts break in webpack/Next.js because .afm files aren't bundled.
+// Copy them from node_modules to the expected webpack output location on first use.
+let fontsCopied = false;
+function ensurePdfkitFonts() {
+  if (fontsCopied) return;
+  try {
+    const cwd = process.cwd();
+    const targetDir = path.join(cwd, ".next", "server", "vendor-chunks", "data");
+    if (!fs.existsSync(path.join(targetDir, "Helvetica.afm"))) {
+      // Use filesystem path directly — require.resolve returns virtual webpack paths
+      const pdfkitDataDir = path.join(cwd, "node_modules", "pdfkit", "js", "data");
+      if (!fs.existsSync(pdfkitDataDir)) {
+        console.error("[pdf] PDFKit data dir not found at:", pdfkitDataDir);
+        return;
+      }
+      fs.mkdirSync(targetDir, { recursive: true });
+      for (const file of fs.readdirSync(pdfkitDataDir)) {
+        if (file.endsWith(".afm")) {
+          fs.copyFileSync(path.join(pdfkitDataDir, file), path.join(targetDir, file));
+        }
+      }
+      console.log("[pdf] Copied PDFKit font files to", targetDir);
+    }
+    fontsCopied = true;
+  } catch (e: any) {
+    console.error("[pdf] Failed to copy font files:", e.message);
+  }
+}
 
 interface PdfBranding {
   companyName?: string;
@@ -57,6 +88,7 @@ function getSeverityColor(severity: string): string {
 }
 
 export async function generatePdfReport(data: PdfData): Promise<Buffer> {
+  ensurePdfkitFonts();
   return new Promise((resolve) => {
     const doc = new PDFDocument({ margin: 50, size: "A4" });
     const chunks: Buffer[] = [];

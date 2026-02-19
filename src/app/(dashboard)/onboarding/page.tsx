@@ -81,6 +81,8 @@ export default function OnboardingPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
+  const [auditStatus, setAuditStatus] = useState<string | null>(null);
+
   async function handleSubmit() {
     setLoading(true);
     try {
@@ -98,6 +100,18 @@ export default function OnboardingPage() {
 
       if (!res.ok) throw new Error("Failed to create business");
       const data = await res.json();
+
+      // Auto-start audit after business creation
+      setAuditStatus("Starting audit...");
+      try {
+        const auditRes = await fetch(`/api/audit/${data.id}/start`, { method: "POST" });
+        if (auditRes.ok) {
+          setAuditStatus("Audit started! Redirecting...");
+        }
+      } catch {
+        // Audit start failed, still redirect to business page
+      }
+
       router.push(`/business/${data.id}`);
     } catch (err) {
       console.error(err);
@@ -393,7 +407,7 @@ export default function OnboardingPage() {
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
             >
               {loading ? (
-                <>Creating...</>
+                <>{auditStatus || "Creating business..."}</>
               ) : (
                 <>Create & Run Audit <Sparkles className="w-4 h-4" /></>
               )}

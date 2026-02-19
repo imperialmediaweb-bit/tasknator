@@ -173,6 +173,22 @@ export default function AdminPage() {
     } catch {}
   }
 
+  async function assignPlan(userId: string, plan: string) {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, plan }),
+      });
+      if (res.ok) {
+        await loadUsers();
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to assign plan");
+      }
+    } catch {}
+  }
+
   // Homepage
   async function loadHomepageConfig() {
     try { const r = await fetch("/api/admin/homepage"); if (r.ok) setHomepageConfig(await r.json()); } catch {}
@@ -468,14 +484,19 @@ export default function AdminPage() {
                     </td>
                     <td className="px-5 py-3.5 text-sm text-slate-600">{u.workspace || "—"}</td>
                     <td className="px-5 py-3.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        u.plan === "AGENCY" ? "bg-purple-50 text-purple-700" :
-                        u.plan === "PRO" ? "bg-indigo-50 text-indigo-700" :
-                        u.plan === "STARTER" ? "bg-slate-50 text-slate-600" :
-                        "bg-slate-50 text-slate-400"
-                      }`}>
-                        {u.plan || "—"}
-                      </span>
+                      <select
+                        value={u.plan || "STARTER"}
+                        onChange={(e) => assignPlan(u.id, e.target.value)}
+                        className={`text-xs px-2 py-1 rounded-lg font-medium border cursor-pointer transition-colors ${
+                          u.plan === "AGENCY" ? "bg-purple-50 text-purple-700 border-purple-200" :
+                          u.plan === "PRO" ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
+                          "bg-slate-50 text-slate-600 border-slate-200"
+                        }`}
+                      >
+                        <option value="STARTER">STARTER</option>
+                        <option value="PRO">PRO</option>
+                        <option value="AGENCY">AGENCY</option>
+                      </select>
                     </td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
