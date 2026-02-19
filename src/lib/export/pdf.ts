@@ -1,5 +1,11 @@
 import PDFDocument from "pdfkit";
 
+interface PdfBranding {
+  companyName?: string;
+  tagline?: string;
+  websiteUrl?: string;
+}
+
 interface PdfData {
   title: string;
   businessName: string;
@@ -12,6 +18,7 @@ interface PdfData {
   rootCause: string;
   findings: { category: string; title: string; severity: string; detail: string }[];
   generatedAt?: string;
+  branding?: PdfBranding;
 }
 
 const COLORS = {
@@ -59,10 +66,16 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
 
     const pageWidth = doc.page.width - 100; // 50 margin each side
 
+    // White-label branding
+    const brandName = data.branding?.companyName || "Tasknator";
+    const brandTagline = data.branding?.tagline || "AI Business Diagnostics Report";
+    const brandUrl = data.branding?.websiteUrl || "www.tasknator.com";
+    const isWhiteLabel = !!data.branding?.companyName;
+
     // ─── Header Banner ───────────────────────────────────
     doc.rect(0, 0, doc.page.width, 120).fill(COLORS.primary);
-    doc.fontSize(28).font("Helvetica-Bold").fillColor(COLORS.white).text("TASKNATOR", 50, 30);
-    doc.fontSize(11).font("Helvetica").fillColor("#c7d2fe").text("AI Business Diagnostics Report", 50, 62);
+    doc.fontSize(28).font("Helvetica-Bold").fillColor(COLORS.white).text(brandName.toUpperCase(), 50, 30);
+    doc.fontSize(11).font("Helvetica").fillColor("#c7d2fe").text(brandTagline, 50, 62);
     doc.fontSize(9).fillColor("#a5b4fc").text(data.generatedAt || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }), 50, 80);
 
     // Overall score circle in header
@@ -93,12 +106,9 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
     // ─── Score Breakdown ─────────────────────────────────
     doc.fontSize(14).font("Helvetica-Bold").fillColor(COLORS.primary).text("SCORE BREAKDOWN", 50);
     doc.moveDown(0.3);
-
-    // Thin line separator
     doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
     doc.moveDown(0.8);
 
-    // Score bars
     const barHeight = 14;
     const barMaxWidth = pageWidth - 120;
     const labelWidth = 100;
@@ -108,22 +118,15 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
       const color = getScoreColor(score.score);
       const barWidth = (score.score / 100) * barMaxWidth;
 
-      // Label
       doc.fontSize(10).font("Helvetica").fillColor(COLORS.textMedium).text(score.label, 50, y + 1, { width: labelWidth });
 
-      // Background bar
       const barX = 50 + labelWidth + 10;
       doc.roundedRect(barX, y, barMaxWidth, barHeight, 3).fill("#f3f4f6");
-
-      // Filled bar
       if (barWidth > 0) {
         doc.roundedRect(barX, y, Math.max(barWidth, 6), barHeight, 3).fill(color);
       }
-
-      // Score text
       doc.fontSize(10).font("Helvetica-Bold").fillColor(COLORS.textDark);
       doc.text(`${score.score}`, barX + barMaxWidth + 8, y + 1);
-
       doc.y = y + barHeight + 8;
     }
 
@@ -136,7 +139,6 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
       doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
       doc.moveDown(0.5);
 
-      // Orange-tinted box
       const rcY = doc.y;
       const rcHeight = doc.heightOfString(data.rootCause, { width: pageWidth - 30 }) + 20;
       doc.roundedRect(50, rcY, pageWidth, rcHeight, 6).fill("#fff7ed");
@@ -154,7 +156,6 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
     doc.fontSize(9).font("Helvetica").fillColor(COLORS.textLight).text(`${data.findings.length} issues identified`, 50);
     doc.moveDown(0.8);
 
-    // Group findings by severity
     const severityOrder = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"];
     const grouped = new Map<string, typeof data.findings>();
     for (const f of data.findings) {
@@ -168,7 +169,6 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
       if (!findings || findings.length === 0) continue;
 
       for (const finding of findings) {
-        // Check if we need a new page
         const estimatedHeight = 60 + doc.heightOfString(finding.detail, { width: pageWidth - 30 });
         if (doc.y + estimatedHeight > doc.page.height - 80) {
           doc.addPage();
@@ -177,27 +177,19 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
         const y = doc.y;
         const sevColor = getSeverityColor(finding.severity);
 
-        // Severity badge
         const badgeText = finding.severity;
         doc.fontSize(7).font("Helvetica-Bold");
         const badgeWidth = doc.widthOfString(badgeText) + 12;
         doc.roundedRect(50, y, badgeWidth, 16, 3).fill(sevColor);
         doc.fontSize(7).font("Helvetica-Bold").fillColor(COLORS.white).text(badgeText, 56, y + 4);
 
-        // Category
         doc.fontSize(8).font("Helvetica").fillColor(COLORS.textMuted).text(finding.category.toUpperCase(), 50 + badgeWidth + 8, y + 4);
 
         doc.y = y + 20;
-
-        // Title
         doc.fontSize(11).font("Helvetica-Bold").fillColor(COLORS.textDark).text(finding.title, 50);
         doc.moveDown(0.2);
-
-        // Detail
         doc.fontSize(9).font("Helvetica").fillColor(COLORS.textMedium).text(finding.detail, 50, doc.y, { width: pageWidth });
         doc.moveDown(0.8);
-
-        // Separator line
         doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor("#f3f4f6").lineWidth(0.5).stroke();
         doc.moveDown(0.5);
       }
@@ -210,9 +202,17 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
     doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
     doc.moveDown(0.5);
     doc.fontSize(8).font("Helvetica").fillColor(COLORS.textMuted);
-    doc.text("Generated by Tasknator — AI that diagnoses & fixes business bottlenecks", 50, doc.y, { align: "center" });
-    doc.moveDown(0.3);
-    doc.fontSize(7).fillColor(COLORS.textMuted).text("www.tasknator.com", { align: "center" });
+    if (isWhiteLabel) {
+      doc.text(`Generated by ${brandName}`, 50, doc.y, { align: "center" });
+      if (brandUrl) {
+        doc.moveDown(0.3);
+        doc.fontSize(7).fillColor(COLORS.textMuted).text(brandUrl, { align: "center" });
+      }
+    } else {
+      doc.text("Generated by Tasknator — AI that diagnoses & fixes business bottlenecks", 50, doc.y, { align: "center" });
+      doc.moveDown(0.3);
+      doc.fontSize(7).fillColor(COLORS.textMuted).text("www.tasknator.com", { align: "center" });
+    }
 
     doc.end();
   });

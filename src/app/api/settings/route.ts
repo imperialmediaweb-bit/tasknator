@@ -20,6 +20,12 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     workspaceName: membership?.workspace.name || "",
     locale: user.locale || "en",
+    plan: membership?.workspace.plan || "STARTER",
+    // White-label branding fields
+    customBrandName: membership?.workspace.customBrandName || "",
+    logoUrl: membership?.workspace.logoUrl || "",
+    customDomain: membership?.workspace.customDomain || "",
+    whiteLabelEnabled: membership?.workspace.whiteLabelEnabled || false,
   });
 }
 
@@ -42,12 +48,26 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { workspaceName, locale } = body;
+  const { workspaceName, locale, customBrandName, logoUrl, customDomain, whiteLabelEnabled } = body;
 
-  if (workspaceName !== undefined) {
+  // Workspace updates
+  const workspaceData: Record<string, any> = {};
+  if (workspaceName !== undefined) workspaceData.name = workspaceName;
+  if (customBrandName !== undefined) workspaceData.customBrandName = customBrandName;
+  if (logoUrl !== undefined) workspaceData.logoUrl = logoUrl;
+  if (customDomain !== undefined) workspaceData.customDomain = customDomain;
+  if (whiteLabelEnabled !== undefined) {
+    // Only allow white-label for Agency plan
+    if (whiteLabelEnabled && membership.workspace.plan !== "AGENCY") {
+      return NextResponse.json({ error: "White-label requires Agency plan" }, { status: 403 });
+    }
+    workspaceData.whiteLabelEnabled = whiteLabelEnabled;
+  }
+
+  if (Object.keys(workspaceData).length > 0) {
     await db.workspace.update({
       where: { id: membership.workspaceId },
-      data: { name: workspaceName },
+      data: workspaceData,
     });
   }
 
