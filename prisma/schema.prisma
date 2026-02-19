@@ -137,13 +137,16 @@ model VerificationToken {
 // ─── Workspace & Team ────────────────────────────────────
 
 model Workspace {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  plan      PlanTier @default(STARTER)
-  logoUrl   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  plan             PlanTier @default(STARTER)
+  logoUrl          String?
+  customBrandName  String?
+  customDomain     String?
+  whiteLabelEnabled Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   memberships      Membership[]
   businessProfiles BusinessProfile[]

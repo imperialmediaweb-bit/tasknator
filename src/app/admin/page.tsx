@@ -59,6 +59,10 @@ export default function AdminPage() {
   const [stats, setStats] = useState({ users: 0, workspaces: 0, businesses: 0, audits: 0, activeSubs: 0 });
   const [searchUser, setSearchUser] = useState("");
 
+  // AI test state
+  const [aiTestLoading, setAiTestLoading] = useState(false);
+  const [aiTestResults, setAiTestResults] = useState<any[] | null>(null);
+
   // Homepage state
   const [homepageConfig, setHomepageConfig] = useState<Record<string, string>>({});
   const [hpSaving, setHpSaving] = useState(false);
@@ -677,6 +681,48 @@ export default function AdminPage() {
               })}
             </div>
           ))}
+          {/* Test AI Connection */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="font-semibold text-slate-900">Test AI Connection</h4>
+                <p className="text-xs text-slate-500 mt-0.5">Send a test request to verify your API keys work correctly.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  setAiTestLoading(true);
+                  setAiTestResults(null);
+                  try {
+                    const res = await fetch("/api/admin/test-ai", { method: "POST" });
+                    const data = await res.json();
+                    setAiTestResults(data.results || []);
+                  } catch {
+                    setAiTestResults([{ provider: "System", status: "error", message: "Network error" }]);
+                  }
+                  setAiTestLoading(false);
+                }}
+                disabled={aiTestLoading}
+                className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+              >
+                {aiTestLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                {aiTestLoading ? "Testing..." : "Test Now"}
+              </button>
+            </div>
+            {aiTestResults && (
+              <div className="space-y-2 mt-3">
+                {aiTestResults.map((r: any, i: number) => (
+                  <div key={i} className={`flex items-start gap-2 p-3 rounded-xl text-sm ${
+                    r.status === "ok" ? "bg-emerald-50 text-emerald-900" :
+                    r.status === "not_configured" ? "bg-slate-50 text-slate-600" :
+                    "bg-rose-50 text-rose-900"
+                  }`}>
+                    <span className="font-medium min-w-[80px]">{r.provider}:</span>
+                    <span>{r.status === "ok" ? "Connected" : r.status === "not_configured" ? "Not configured" : r.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

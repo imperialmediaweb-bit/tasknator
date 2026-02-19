@@ -27,7 +27,7 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = (session?.user as any)?.isAdmin;
-  const [branding, setBranding] = useState({ siteName: "Tasknator", logoUrl: "" });
+  const [branding, setBranding] = useState({ siteName: "Tasknator", logoUrl: "", whiteLabel: false });
 
   useEffect(() => {
     fetch("/api/branding").then(r => r.json()).then(d => setBranding(d)).catch(() => {});
@@ -52,7 +52,7 @@ export function Sidebar() {
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
             <Logo />
-            {!branding.logoUrl && <span className="font-bold text-slate-900 truncate">{branding.siteName}</span>}
+            {(!branding.logoUrl || branding.whiteLabel) && <span className="font-bold text-slate-900 truncate">{branding.siteName}</span>}
           </Link>
         )}
         {collapsed && (

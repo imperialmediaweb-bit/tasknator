@@ -15,7 +15,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       where: { id: params.id },
       include: {
         findings: true,
-        businessProfile: true,
+        businessProfile: {
+          include: { workspace: true },
+        },
       },
     });
 
@@ -24,6 +26,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     const biz = auditRun.businessProfile;
+    const workspace = biz.workspace;
+
+    // Build branding from workspace white-label settings
+    const branding = workspace.whiteLabelEnabled && workspace.customBrandName
+      ? {
+          companyName: workspace.customBrandName,
+          tagline: `Business Diagnostics Report`,
+          websiteUrl: workspace.customDomain || undefined,
+        }
+      : undefined;
 
     const pdf = await generatePdfReport({
       title: `Diagnostic Report — ${biz.name}`,
@@ -53,6 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         month: "long",
         day: "numeric",
       }),
+      branding,
     });
 
     const filename = `${biz.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}-audit-report.pdf`;
