@@ -89,6 +89,9 @@ CREATE TABLE "Workspace" (
     "slug" TEXT NOT NULL,
     "plan" "PlanTier" NOT NULL DEFAULT 'STARTER',
     "logoUrl" TEXT,
+    "customBrandName" TEXT,
+    "customDomain" TEXT,
+    "whiteLabelEnabled" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
