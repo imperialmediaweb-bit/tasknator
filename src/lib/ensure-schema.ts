@@ -81,7 +81,45 @@ async function applyMigrations() {
         ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT;
       `,
     },
+    {
+      name: "audit_finding_url_evidence",
+      sql: `
+        ALTER TABLE "AuditFinding" ADD COLUMN IF NOT EXISTS "url" TEXT;
+        ALTER TABLE "AuditFinding" ADD COLUMN IF NOT EXISTS "evidence" TEXT;
+      `,
+    },
+    {
+      name: "audit_run_crawl_stats",
+      sql: `
+        ALTER TABLE "AuditRun" ADD COLUMN IF NOT EXISTS "crawlStats" JSONB;
+      `,
+    },
+    {
+      name: "asset_task_link_and_kpi",
+      sql: `
+        ALTER TABLE "Asset" ADD COLUMN IF NOT EXISTS "taskId" TEXT;
+        ALTER TABLE "Asset" ADD COLUMN IF NOT EXISTS "kpi" TEXT;
+      `,
+    },
   ];
+
+  // Enum value migrations need separate handling (cannot be in transactions)
+  const enumMigrations = [
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'HOOK_SCRIPTS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'UGC_SCRIPTS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'SOCIAL_CAPTIONS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'CREATIVE_BRIEF'`,
+  ];
+
+  for (const stmt of enumMigrations) {
+    try {
+      await db.$executeRawUnsafe(stmt);
+    } catch (e: any) {
+      if (!e.message?.includes("already exists")) {
+        console.error(`[ensure-schema] Enum migration error:`, e.message);
+      }
+    }
+  }
 
   for (const m of migrations) {
     try {

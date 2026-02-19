@@ -106,10 +106,11 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
 
     // Step 1: Fetch real website content
     let liveWebsiteContent = "";
+    let websiteUrl = "";
     if (businessProfile.websiteUrl) {
-      let url = businessProfile.websiteUrl;
-      if (!url.startsWith("http")) url = "https://" + url;
-      liveWebsiteContent = await fetchWebsiteContent(url);
+      websiteUrl = businessProfile.websiteUrl;
+      if (!websiteUrl.startsWith("http")) websiteUrl = "https://" + websiteUrl;
+      liveWebsiteContent = await fetchWebsiteContent(websiteUrl);
       // Store fetched content on profile
       if (liveWebsiteContent.length > 50 && !liveWebsiteContent.startsWith("[")) {
         await db.businessProfile.update({
@@ -121,6 +122,32 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
     }
 
     await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 20 } });
+
+    // Step 1.5: SEO Crawler — crawl 50-200 pages for technical SEO issues
+    let crawlResult: any = null;
+    let crawlSummary = "";
+    if (websiteUrl) {
+      try {
+        const { crawlSite } = await import("@/lib/crawler/seo-crawler");
+        const { buildCrawlSummary } = await import("@/lib/crawler/seo-analyzer");
+
+        console.log(`[audit] ${auditRunId}: Starting SEO crawl of ${websiteUrl}`);
+        await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 25 } });
+
+        crawlResult = await crawlSite(websiteUrl, { maxPages: 50 });
+
+        await db.auditRun.update({
+          where: { id: auditRunId },
+          data: { progress: 45, crawlStats: crawlResult.stats },
+        });
+
+        crawlSummary = buildCrawlSummary(crawlResult);
+        console.log(`[audit] ${auditRunId}: SEO crawl complete — ${crawlResult.stats.pagesCrawled} pages crawled`);
+      } catch (crawlErr: any) {
+        console.error(`[audit] ${auditRunId}: SEO crawl error:`, crawlErr.message);
+        // Continue without crawl data — not a fatal error
+      }
+    }
 
     // Step 2: Try to get AI provider
     const providerKey = await db.providerKey.findFirst({
@@ -165,7 +192,7 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         const response = await generateWithFallback(providers, {
           messages: [
             { role: "system", content: AUDIT_SYSTEM_PROMPT },
-            { role: "user", content: buildAuditPrompt(businessProfile) },
+            { role: "user", content: buildAuditPrompt(businessProfile, crawlSummary || undefined) },
           ],
           maxTokens: 4096,
           temperature: 0.3,
@@ -205,8 +232,8 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
       }
     }
 
-    // Save findings
-    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 85 } });
+    // Save AI findings
+    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 80 } });
 
     for (const finding of aiResponse.findings || []) {
       await db.auditFinding.create({
@@ -220,6 +247,34 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         },
       });
     }
+
+    // Save SEO crawler findings (with URL + evidence)
+    if (crawlResult) {
+      try {
+        const { analyzeCrawlResults } = await import("@/lib/crawler/seo-analyzer");
+        const seoIssues = analyzeCrawlResults(crawlResult, websiteUrl);
+        console.log(`[audit] ${auditRunId}: SEO analyzer found ${seoIssues.length} issues`);
+
+        for (const issue of seoIssues) {
+          await db.auditFinding.create({
+            data: {
+              auditRunId,
+              category: issue.category,
+              title: issue.title,
+              detail: issue.detail,
+              severity: issue.severity,
+              fixable: issue.fixable,
+              url: issue.url,
+              evidence: issue.evidence,
+            },
+          });
+        }
+      } catch (analyzeErr: any) {
+        console.error(`[audit] ${auditRunId}: SEO analyzer error:`, analyzeErr.message);
+      }
+    }
+
+    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 90 } });
 
     // Complete audit
     await db.auditRun.update({

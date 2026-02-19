@@ -96,7 +96,12 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
             <h2 className="text-lg font-semibold">Audit Findings</h2>
             <div className="flex items-center gap-3">
               {latestAudit && (
-                <span className="text-sm text-gray-400">{latestAudit.findings.length} issues found</span>
+                <span className="text-sm text-gray-400">
+                  {latestAudit.findings.length} issues found
+                  {(latestAudit as any).crawlStats?.pagesCrawled && (
+                    <span className="ml-2 text-indigo-500">· {(latestAudit as any).crawlStats.pagesCrawled} pages crawled</span>
+                  )}
+                </span>
               )}
               {latestAudit?.status === "COMPLETED" && (
                 <>
@@ -140,6 +145,12 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
                       </div>
                       <h4 className="font-medium text-gray-900 text-sm">{finding.title}</h4>
                       <p className="text-xs text-gray-500 mt-1 line-clamp-2">{finding.detail}</p>
+                      {(finding as any).url && (
+                        <a href={(finding as any).url} target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] text-blue-600 hover:underline mt-1 inline-flex items-center gap-0.5">
+                          <ExternalLink className="w-2.5 h-2.5" /> {(finding as any).url}
+                        </a>
+                      )}
                     </div>
                     {finding.fixable && !finding.fixed && (
                       <FindingFixButton findingId={finding.id} />

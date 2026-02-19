@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Download, Target, TrendingUp } from "lucide-react";
+import { ArrowLeft, Calendar, Download, ExternalLink, Globe, Target, TrendingUp } from "lucide-react";
 
 export default async function AuditReportPage({ params }: { params: { id: string; auditId: string } }) {
   const session = await getServerSession(authOptions);
@@ -122,6 +122,44 @@ export default async function AuditReportPage({ params }: { params: { id: string
         </div>
       </div>
 
+      {/* SEO Crawl Summary */}
+      {auditRun.crawlStats && (() => {
+        const cs = auditRun.crawlStats as any;
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Globe className="w-5 h-5 text-indigo-600" /> SEO Crawl Summary
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{cs.pagesCrawled ?? 0}</p>
+                <p className="text-xs text-gray-500">Pages Crawled</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-600">{cs.pagesErrored ?? 0}</p>
+                <p className="text-xs text-gray-500">Errors Found</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{((cs.durationMs ?? 0) / 1000).toFixed(1)}s</p>
+                <p className="text-xs text-gray-500">Crawl Duration</p>
+              </div>
+              <div>
+                <p className={`text-2xl font-bold ${cs.sitemapFound ? "text-green-600" : "text-red-600"}`}>
+                  {cs.sitemapFound ? "Yes" : "No"}
+                </p>
+                <p className="text-xs text-gray-500">Sitemap Found</p>
+              </div>
+              <div>
+                <p className={`text-2xl font-bold ${cs.robotsTxtFound ? "text-green-600" : "text-red-600"}`}>
+                  {cs.robotsTxtFound ? "Yes" : "No"}
+                </p>
+                <p className="text-xs text-gray-500">Robots.txt</p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Root Cause */}
       {auditRun.rootCauseSummary && (
         <div className="bg-orange-50 border border-orange-100 rounded-2xl p-6">
@@ -158,6 +196,18 @@ export default async function AuditReportPage({ params }: { params: { id: string
                     <span className="text-[10px] font-medium text-gray-400 uppercase bg-gray-50 px-2 py-0.5 rounded">{finding.category}</span>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">{finding.detail}</p>
+                  {finding.url && (
+                    <a href={finding.url} target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline mt-1.5 inline-flex items-center gap-1">
+                      <ExternalLink className="w-3 h-3" /> {finding.url}
+                    </a>
+                  )}
+                  {finding.evidence && (
+                    <details className="mt-1.5">
+                      <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">Show evidence</summary>
+                      <pre className="text-xs text-gray-500 mt-1 bg-gray-50 rounded p-2 overflow-x-auto whitespace-pre-wrap">{finding.evidence}</pre>
+                    </details>
+                  )}
                   <div className="flex items-center gap-3 mt-2">
                     {finding.fixable && (
                       <span className="text-[10px] font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Fixable</span>

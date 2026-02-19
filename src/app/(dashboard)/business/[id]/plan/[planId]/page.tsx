@@ -17,7 +17,7 @@ export default async function PlanDetailPage({
   const plan = await db.repairPlan.findUnique({
     where: { id: params.planId },
     include: {
-      tasks: { orderBy: { sortOrder: "asc" } },
+      tasks: { orderBy: { sortOrder: "asc" }, include: { assets: true } },
       assets: { include: { versions: true } },
       businessProfile: true,
     },
@@ -113,6 +113,11 @@ export default async function PlanDetailPage({
                           <Clock className="w-3 h-3" /> {task.timeEstimate}
                         </span>
                       )}
+                      {(task as any).assets?.length > 0 && (
+                        <span className="text-xs text-violet-600 font-medium flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> {(task as any).assets.length} asset{(task as any).assets.length > 1 ? "s" : ""} linked
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -143,6 +148,11 @@ export default async function PlanDetailPage({
                   <span className="text-xs font-medium text-gray-400 uppercase">{asset.type.replace(/_/g, " ")}</span>
                 </div>
                 <h4 className="text-sm font-medium text-gray-900">{asset.title}</h4>
+                {asset.kpi && (
+                  <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded mt-1 inline-block">
+                    KPI: {asset.kpi}
+                  </span>
+                )}
                 <p className="text-xs text-gray-400 mt-1">
                   {asset.versions.length} version{asset.versions.length !== 1 ? "s" : ""}
                 </p>
