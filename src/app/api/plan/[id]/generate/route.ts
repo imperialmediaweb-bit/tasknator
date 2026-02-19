@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { AssetType } from "@prisma/client";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -84,6 +85,31 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           sortOrder: sortOrder++,
         },
       });
+    }
+
+    // Generate initial assets based on finding categories
+    const categories = Array.from(new Set(auditRun.findings.map((f) => f.category)));
+    const assetMap: Record<string, { type: AssetType; title: string }> = {
+      website: { type: "WEBSITE_COPY", title: "Website Copy & CTAs" },
+      seo: { type: "SEO_PLAN", title: "SEO Strategy & Content Plan" },
+      social: { type: "AD_COPY", title: "Social Media Ad Copy" },
+      offer: { type: "OFFER_PACKAGES", title: "Offer & Pricing Packages" },
+      reputation: { type: "REVIEW_REPLIES", title: "Review Response Templates" },
+      local: { type: "EMAIL_SEQUENCE", title: "Customer Outreach Emails" },
+    };
+
+    for (const cat of categories) {
+      const assetDef = assetMap[cat];
+      if (assetDef) {
+        await db.asset.create({
+          data: {
+            repairPlanId: repairPlan.id,
+            type: assetDef.type,
+            title: `${assetDef.title} for ${biz.name}`,
+            content: `[Asset pending generation] Click "Regenerate" to generate AI-powered ${assetDef.title.toLowerCase()} for ${biz.name}.\n\nThis asset was created based on your ${cat} audit findings. Use the Regenerate button above to fill it with AI-generated content, or write your own content here.`,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ repairPlanId: repairPlan.id }, { status: 201 });

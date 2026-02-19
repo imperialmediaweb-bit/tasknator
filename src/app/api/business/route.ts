@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getPlanConfig } from "@/lib/billing/plans";
+import { PlanTier } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,6 +22,16 @@ export async function POST(req: NextRequest) {
 
     if (!membership) {
       return NextResponse.json({ error: "No workspace found" }, { status: 404 });
+    }
+
+    // Enforce business profile limit based on plan
+    const plan = membership.workspace.plan as PlanTier;
+    const planConfig = getPlanConfig(plan);
+    const currentCount = membership.workspace.businessProfiles.length;
+    if (currentCount >= planConfig.limits.businesses) {
+      return NextResponse.json({
+        error: `Your ${planConfig.name} plan allows up to ${planConfig.limits.businesses} business profile${planConfig.limits.businesses > 1 ? "s" : ""}. Upgrade your plan to add more businesses.`,
+      }, { status: 403 });
     }
 
     const body = await req.json();

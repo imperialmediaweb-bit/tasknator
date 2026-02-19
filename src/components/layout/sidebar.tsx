@@ -14,9 +14,9 @@ import { useState, useEffect } from "react";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/onboarding", icon: Building2, label: "Businesses" },
-  { href: "/dashboard", icon: Search, label: "Audits", badge: "AI" },
-  { href: "/dashboard", icon: FileText, label: "Repair Plans" },
-  { href: "/dashboard", icon: Palette, label: "Assets" },
+  { href: "/audits", icon: Search, label: "Audits", badge: "AI" },
+  { href: "/plans", icon: FileText, label: "Repair Plans" },
+  { href: "/assets", icon: Palette, label: "Assets" },
   { href: "/team", icon: Users, label: "Team" },
   { href: "/billing", icon: CreditCard, label: "Billing" },
   { href: "/settings", icon: Settings, label: "Settings" },
@@ -75,7 +75,7 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
           return (
             <Link
               key={item.label}

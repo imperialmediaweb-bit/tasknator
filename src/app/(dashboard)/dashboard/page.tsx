@@ -186,16 +186,16 @@ export default async function DashboardPage() {
           <FileText className="w-8 h-8 mb-3 text-purple-200" />
           <h3 className="font-semibold mb-1">Generate Assets</h3>
           <p className="text-sm text-purple-100 mb-3">Create ads, emails, scripts, and website copy.</p>
-          <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-medium text-white hover:underline">
-            View plans <ArrowRight className="w-3.5 h-3.5" />
+          <Link href="/assets" className="inline-flex items-center gap-1 text-sm font-medium text-white hover:underline">
+            View assets <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 text-white">
           <BarChart3 className="w-8 h-8 mb-3 text-slate-400" />
           <h3 className="font-semibold mb-1">Track Progress</h3>
           <p className="text-sm text-slate-300 mb-3">Monitor your repair plan tasks and milestones.</p>
-          <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm font-medium text-white hover:underline">
-            View checklist <ArrowRight className="w-3.5 h-3.5" />
+          <Link href="/plans" className="inline-flex items-center gap-1 text-sm font-medium text-white hover:underline">
+            View plans <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>

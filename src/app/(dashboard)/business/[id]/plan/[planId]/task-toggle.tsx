@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle } from "lucide-react";
 
 export function TaskToggle({ taskId, initialCompleted }: { taskId: string; initialCompleted: boolean }) {
+  const router = useRouter();
   const [completed, setCompleted] = useState(initialCompleted);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +19,12 @@ export function TaskToggle({ taskId, initialCompleted }: { taskId: string; initi
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ completed: newVal }),
       });
-      if (!res.ok) setCompleted(!newVal); // revert on error
+      if (!res.ok) {
+        setCompleted(!newVal); // revert on error
+      } else {
+        // Refresh server data so progress counters update
+        router.refresh();
+      }
     } catch {
       setCompleted(!newVal);
     }
