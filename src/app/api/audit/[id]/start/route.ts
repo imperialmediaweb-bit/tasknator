@@ -136,43 +136,73 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
     const getKey = (name: string) => dbKeys[name] || process.env[name] || "";
 
     let aiResponse: any;
+    let aiError: string | null = null;
 
     if (providerKey || getKey("ANTHROPIC_API_KEY") || getKey("OPENAI_API_KEY") || getKey("GEMINI_API_KEY")) {
-      const { generateWithFallback } = await import("@/lib/ai/provider");
-      const { decrypt } = await import("@/lib/crypto");
-      const { AUDIT_SYSTEM_PROMPT, buildAuditPrompt } = await import("@/lib/ai/prompts");
+      try {
+        const { generateWithFallback } = await import("@/lib/ai/provider");
+        const { decrypt } = await import("@/lib/crypto");
+        const { AUDIT_SYSTEM_PROMPT, buildAuditPrompt } = await import("@/lib/ai/prompts");
 
-      const providers: { type: any; apiKey: string }[] = [];
+        const providers: { type: any; apiKey: string }[] = [];
 
-      if (providerKey) {
-        const decryptedKey = await decrypt(providerKey.encryptedKey, providerKey.nonce);
-        providers.push({ type: providerKey.provider, apiKey: decryptedKey });
+        if (providerKey) {
+          try {
+            const decryptedKey = await decrypt(providerKey.encryptedKey, providerKey.nonce);
+            providers.push({ type: providerKey.provider, apiKey: decryptedKey });
+          } catch (decryptErr: any) {
+            console.error("[audit] Failed to decrypt workspace provider key:", decryptErr.message);
+          }
+        }
+        if (getKey("ANTHROPIC_API_KEY")) providers.push({ type: "ANTHROPIC", apiKey: getKey("ANTHROPIC_API_KEY") });
+        if (getKey("OPENAI_API_KEY")) providers.push({ type: "OPENAI", apiKey: getKey("OPENAI_API_KEY") });
+        if (getKey("GEMINI_API_KEY")) providers.push({ type: "GEMINI", apiKey: getKey("GEMINI_API_KEY") });
+
+        console.log(`[audit] ${auditRunId}: Using ${providers.length} AI provider(s): ${providers.map(p => p.type).join(", ")}`);
+
+        await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 30 } });
+
+        const response = await generateWithFallback(providers, {
+          messages: [
+            { role: "system", content: AUDIT_SYSTEM_PROMPT },
+            { role: "user", content: buildAuditPrompt(businessProfile) },
+          ],
+          maxTokens: 4096,
+          temperature: 0.3,
+        });
+
+        console.log(`[audit] ${auditRunId}: AI response received (${response.length} chars)`);
+
+        await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 70 } });
+
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            aiResponse = JSON.parse(jsonMatch[0]);
+            console.log(`[audit] ${auditRunId}: AI JSON parsed successfully, score: ${aiResponse.overallScore}`);
+          } catch (parseErr) {
+            console.error(`[audit] ${auditRunId}: Failed to parse AI JSON response`);
+            aiError = "AI returned invalid JSON";
+          }
+        } else {
+          console.error(`[audit] ${auditRunId}: AI response did not contain JSON`);
+          aiError = "AI response did not contain JSON";
+        }
+      } catch (err: any) {
+        console.error(`[audit] ${auditRunId}: AI provider error:`, err.message);
+        aiError = `AI error: ${err.message}`;
+        // Fall through to template instead of failing the whole audit
       }
-      if (getKey("ANTHROPIC_API_KEY")) providers.push({ type: "ANTHROPIC", apiKey: getKey("ANTHROPIC_API_KEY") });
-      if (getKey("OPENAI_API_KEY")) providers.push({ type: "OPENAI", apiKey: getKey("OPENAI_API_KEY") });
-      if (getKey("GEMINI_API_KEY")) providers.push({ type: "GEMINI", apiKey: getKey("GEMINI_API_KEY") });
-
-      await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 30 } });
-
-      const response = await generateWithFallback(providers, {
-        messages: [
-          { role: "system", content: AUDIT_SYSTEM_PROMPT },
-          { role: "user", content: buildAuditPrompt(businessProfile) },
-        ],
-        maxTokens: 4096,
-        temperature: 0.3,
-      });
-
-      await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 70 } });
-
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        aiResponse = JSON.parse(jsonMatch[0]);
-      }
+    } else {
+      console.log(`[audit] ${auditRunId}: No AI providers configured, using template audit`);
     }
 
     if (!aiResponse) {
+      console.log(`[audit] ${auditRunId}: Using template audit${aiError ? ` (reason: ${aiError})` : ""}`);
       aiResponse = generateTemplateAudit(businessProfile, liveWebsiteContent);
+      if (aiError) {
+        aiResponse.rootCauseSummary = `[AI analysis failed: ${aiError}. Template-based analysis used instead.] ` + aiResponse.rootCauseSummary;
+      }
     }
 
     // Save findings
