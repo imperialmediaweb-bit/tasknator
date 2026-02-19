@@ -116,6 +116,25 @@ export default function LoginPage() {
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-200 text-amber-700 font-bold">ADMIN</span>
           </div>
         </button>
+
+        <button
+          onClick={() => handleQuickLogin(ADMIN_ACCOUNT, "/dashboard")}
+          disabled={loading}
+          className="w-full p-3.5 rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50 hover:border-emerald-300 transition-all text-left group disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-emerald-900">Agency Demo</div>
+              <div className="text-xs text-emerald-600">White-label branding &amp; client management</div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-700 font-bold">AGENCY</span>
+          </div>
+        </button>
       </div>
 
       {/* Google OAuth */}
