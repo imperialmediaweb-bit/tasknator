@@ -246,6 +246,23 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         where: { refId: auditRunId },
         data: { status: "failed", error: failReason },
       });
+
+      // Notify owner about failure
+      try {
+        const owner = await db.membership.findFirst({
+          where: { workspace: { businessProfiles: { some: { id: businessProfile.id } } }, role: "OWNER" },
+          include: { user: true },
+        });
+        if (owner?.user?.email) {
+          const { sendAuditFailedEmail } = await import("@/lib/email");
+          await sendAuditFailedEmail({
+            to: owner.user.email,
+            businessName: businessProfile.name,
+            reason: failReason,
+          });
+        }
+      } catch {}
+
       return;
     }
 
@@ -316,6 +333,30 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
       where: { refId: auditRunId },
       data: { status: "completed", progress: 100, finishedAt: new Date() },
     });
+
+    // Send audit complete email to workspace owner
+    try {
+      const owner = await db.membership.findFirst({
+        where: { workspace: { businessProfiles: { some: { id: businessProfile.id } } }, role: "OWNER" },
+        include: { user: true },
+      });
+      if (owner?.user?.email) {
+        const { sendAuditCompleteEmail } = await import("@/lib/email");
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const findingsCount = await db.auditFinding.count({ where: { auditRunId } });
+        const criticalCount = await db.auditFinding.count({ where: { auditRunId, severity: "CRITICAL" } });
+        await sendAuditCompleteEmail({
+          to: owner.user.email,
+          businessName: businessProfile.name,
+          score: aiResponse.overallScore || 50,
+          reportUrl: `${appUrl}/business/${businessProfile.id}/audit/${auditRunId}`,
+          findings: findingsCount,
+          criticalCount,
+        });
+      }
+    } catch (emailErr: any) {
+      console.error(`[audit] ${auditRunId}: Failed to send completion email:`, emailErr.message);
+    }
   } catch (error: any) {
     console.error("Audit processing error:", error);
     await db.auditRun.update({

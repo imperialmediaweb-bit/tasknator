@@ -3,10 +3,27 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { getStripeAsync } from "@/lib/billing/stripe";
+import {
+  sendInvoiceEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionChangedEmail,
+} from "@/lib/email";
 
 async function getWebhookSecret(): Promise<string> {
   const row = await db.systemConfig.findUnique({ where: { key: "STRIPE_WEBHOOK_SECRET" } }).catch(() => null);
   return row?.value || process.env.STRIPE_WEBHOOK_SECRET || "";
+}
+
+async function getWorkspaceOwnerEmail(workspaceId: string): Promise<string | null> {
+  const owner = await db.membership.findFirst({
+    where: { workspaceId, role: "OWNER" },
+    include: { user: true },
+  });
+  return owner?.user?.email || null;
+}
+
+function planLabel(tier: string) {
+  return tier === "AGENCY" ? "Agency" : tier === "PRO" ? "Pro" : "Starter";
 }
 
 export async function POST(req: NextRequest) {
@@ -31,7 +48,7 @@ export async function POST(req: NextRequest) {
         if (workspaceId && session.subscription) {
           const sub = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = sub.items.data[0]?.price.id;
-          
+
           let planTier: "STARTER" | "PRO" | "AGENCY" = "STARTER";
           if (priceId === process.env.STRIPE_PRICE_PRO) planTier = "PRO";
           else if (priceId === process.env.STRIPE_PRICE_AGENCY) planTier = "AGENCY";
@@ -59,6 +76,17 @@ export async function POST(req: NextRequest) {
             where: { id: workspaceId },
             data: { plan: planTier },
           });
+
+          // Email: subscription activated
+          const ownerEmail = await getWorkspaceOwnerEmail(workspaceId);
+          if (ownerEmail) {
+            sendSubscriptionChangedEmail({
+              to: ownerEmail,
+              action: "upgraded",
+              planName: planLabel(planTier),
+              periodEnd: new Date(sub.current_period_end * 1000).toLocaleDateString(),
+            }).catch(console.error);
+          }
         }
         break;
       }
@@ -95,6 +123,17 @@ export async function POST(req: NextRequest) {
             where: { id: existing.workspaceId },
             data: { plan: "STARTER" },
           });
+
+          // Email: subscription canceled
+          const ownerEmail = await getWorkspaceOwnerEmail(existing.workspaceId);
+          if (ownerEmail) {
+            sendSubscriptionChangedEmail({
+              to: ownerEmail,
+              action: "canceled",
+              planName: planLabel(existing.planTier),
+              periodEnd: existing.currentPeriodEnd?.toLocaleDateString(),
+            }).catch(console.error);
+          }
         }
         break;
       }
@@ -119,6 +158,22 @@ export async function POST(req: NextRequest) {
                 periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000) : null,
               },
             });
+
+            // Email: invoice/payment receipt
+            const ownerEmail = await getWorkspaceOwnerEmail(sub.workspaceId);
+            if (ownerEmail) {
+              sendInvoiceEmail({
+                to: ownerEmail,
+                planName: planLabel(sub.planTier),
+                amount: (invoice.amount_paid / 100).toFixed(2),
+                currency: invoice.currency,
+                invoiceUrl: invoice.hosted_invoice_url,
+                pdfUrl: invoice.invoice_pdf,
+                periodEnd: invoice.period_end
+                  ? new Date(invoice.period_end * 1000).toLocaleDateString()
+                  : undefined,
+              }).catch(console.error);
+            }
           }
         }
         break;
@@ -127,10 +182,25 @@ export async function POST(req: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         if (invoice.subscription) {
+          const sub = await db.subscription.findFirst({
+            where: { stripeSubId: invoice.subscription as string },
+          });
           await db.subscription.updateMany({
             where: { stripeSubId: invoice.subscription as string },
             data: { status: "past_due" },
           });
+
+          // Email: payment failed
+          if (sub) {
+            const ownerEmail = await getWorkspaceOwnerEmail(sub.workspaceId);
+            if (ownerEmail) {
+              sendPaymentFailedEmail({
+                to: ownerEmail,
+                planName: planLabel(sub.planTier),
+                amount: `$${((invoice.amount_due || 0) / 100).toFixed(2)}`,
+              }).catch(console.error);
+            }
+          }
         }
         break;
       }
