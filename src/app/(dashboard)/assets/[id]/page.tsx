@@ -23,6 +23,7 @@ export default function AssetEditorPage() {
   const [regenerating, setRegenerating] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAsset();
@@ -59,15 +60,20 @@ export default function AssetEditorPage() {
 
   async function handleRegenerate() {
     setRegenerating(true);
+    setError(null);
     try {
       const res = await fetch(`/api/assets/${id}/regenerate`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setContent(data.content);
         await fetchAsset();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || `Regeneration failed (${res.status}). Please try again.`);
       }
     } catch (err) {
       console.error(err);
+      setError("Network error. Please check your connection and try again.");
     }
     setRegenerating(false);
   }
@@ -165,6 +171,19 @@ export default function AssetEditorPage() {
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">Regeneration failed</p>
+            <p className="text-sm text-red-600 mt-0.5">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 text-sm font-medium">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Editor */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
