@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import {
   LayoutDashboard, Building2, Search, FileText, Palette,
   Settings, CreditCard, Users, ShieldCheck, ChevronLeft, ChevronRight,
-  Zap, LogOut
+  Zap, LogOut, DollarSign
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
@@ -17,6 +17,7 @@ const navItems = [
   { href: "/audits", icon: Search, label: "Audits", badge: "AI" },
   { href: "/plans", icon: FileText, label: "Repair Plans" },
   { href: "/assets", icon: Palette, label: "Assets" },
+  { href: "/sales-doctor", icon: DollarSign, label: "Sales Doctor" },
   { href: "/team", icon: Users, label: "Team" },
   { href: "/billing", icon: CreditCard, label: "Billing" },
   { href: "/settings", icon: Settings, label: "Settings" },

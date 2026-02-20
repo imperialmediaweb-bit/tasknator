@@ -617,6 +617,151 @@ Skip the line. Order ahead for pickup at any location through our app or website
 **Visual:** Coffee cup with steam, warm lighting`,
     },
     {
+      id: "demo-asset-5",
+      repairPlanId: "demo-plan-1",
+      type: "OFFER_PACKAGES" as const,
+      title: "Offer & Pricing Packages for Acme Coffee Shop",
+      content: `# Offer & Pricing Packages — Acme Coffee Shop
+
+## Tier 1: Basic — "Coffee Lover"
+**Price:** $0 (Free loyalty signup)
+**Ideal Customer:** Casual visitors, first-timers, price-conscious students
+
+**What's Included:**
+- Digital punch card (buy 9, get 10th free)
+- Birthday free drink
+- Early access to seasonal menu items
+- Weekly email with specials
+
+**Upsell Path:** "Upgrade to Acme Club for $9.99/month and get unlimited drip coffee"
+
+---
+
+## Tier 2: Standard — "Acme Club"
+**Price:** $9.99/month
+**Ideal Customer:** Daily coffee drinkers, remote workers, regulars
+
+**What's Included:**
+- Unlimited drip coffee & cold brew (1 per visit)
+- 15% off all specialty drinks
+- 10% off food items
+- Priority mobile ordering (skip the line)
+- Free size upgrade on any drink
+- Exclusive monthly limited-edition drink
+
+**Upsell Path:** "Add Acme Catering for your office — $199/month for daily delivery"
+
+---
+
+## Tier 3: Premium — "Acme Corporate"
+**Price:** $199/month (per office)
+**Ideal Customer:** Small offices (5-20 people), co-working spaces, event planners
+
+**What's Included:**
+- Daily coffee delivery to office (choice of 3 varieties)
+- 20 individual drink vouchers per month
+- Dedicated account manager
+- Custom branded cups for events
+- Quarterly team coffee tasting experience
+- Catering menu access with 24-hour turnaround
+
+**Revenue Potential:**
+With 2,000 monthly customers at $8.50 AOV:
+- 20% adopt Basic (free) → increased visit frequency +20% = +$6,800/mo
+- 5% adopt Standard ($9.99/mo) → 100 subscribers = $999/mo + higher AOV
+- 2-3 Corporate accounts → $400-600/mo recurring
+
+**Total estimated uplift:** $8,200-$8,400/month
+
+---
+
+## KPI Target
+Conversion rate +15% — measured by comparing pre-launch vs post-launch monthly revenue per customer.
+
+## Deploy Steps
+1. Design pricing page with 3-tier layout (Basic/Standard/Premium columns)
+2. Set up Square Loyalty for Basic tier digital punch cards
+3. Create Stripe subscription for Standard ($9.99/mo) and Premium ($199/mo)
+4. Add "Compare Plans" section to website with feature comparison table
+5. Train staff on upsell scripts: "Would you like to try Acme Club? Your drip coffee would be free today"
+6. Launch email campaign to existing customers announcing new tiers
+7. Add in-store signage at checkout with QR code to sign up`,
+    },
+    {
+      id: "demo-asset-6",
+      repairPlanId: "demo-plan-1",
+      type: "SALES_SCRIPTS" as const,
+      title: "Sales Scripts & Objection Handling for Acme Coffee Shop",
+      content: `# Sales Scripts — Acme Coffee Shop
+
+## Phone Call Script (Catering Inquiry)
+
+**Opening:**
+"Hi, thanks for calling Acme Coffee Shop! This is [Name]. How can I help you today?"
+
+**If catering inquiry:**
+"Great, we'd love to help with your event! Let me ask a few quick questions:
+1. What's the occasion? (meeting, party, event)
+2. How many people?
+3. When do you need it?
+4. Any dietary preferences we should know about?"
+
+**Pitch:**
+"Perfect. For [X] people, I'd recommend our [Standard/Premium] catering package. It includes [details]. The total would be around $[X]. We also include branded cups and napkins at no extra charge."
+
+**Close:**
+"I can lock in that date for you right now — we just need a 50% deposit. Would you like to go ahead?"
+
+**If they need to think:**
+"Of course! I'll send you a quick email summary with photos of our catering setups. What's the best email? I'll also include a 10% early-booking discount code — it's valid for 48 hours."
+
+---
+
+## WhatsApp 3-Message Sequence (Loyalty Signup)
+
+**Message 1 (After first visit):**
+"Hey [Name]! Thanks for visiting Acme Coffee today. Did you enjoy your [drink]? Reply YES and I'll send you a free size upgrade for your next visit!"
+
+**Message 2 (After reply):**
+"Awesome! Here's your code: SIZEUP. Just show it at the counter next time. By the way, have you heard about Acme Club? For $9.99/month you get unlimited drip coffee, 15% off specialties, and skip-the-line ordering. Want me to sign you up?"
+
+**Message 3 (3 days later if no signup):**
+"Just checking in — your SIZEUP code expires in 4 days! Also, this week we're running a special: first month of Acme Club is FREE. That's unlimited coffee for 30 days, no charge. Tap here to join: [link]"
+
+---
+
+## Objection Handling (5 Common Objections)
+
+### 1. "It's too expensive"
+**Response:** "I totally get it. Let me show you the math — if you buy just one drip coffee a day at $3.50, that's $105/month. Acme Club is $9.99 for unlimited drip coffee. You'd save over $95 every month. It literally pays for itself after 3 visits."
+
+### 2. "I don't come here often enough"
+**Response:** "That's actually the best reason to try it. With Acme Club, you also get 15% off specialty drinks and skip-the-line ordering. Even if you come twice a week, you're saving money. Plus, the first month is free — so you can test it with zero risk."
+
+### 3. "I can get coffee at Starbucks for cheaper"
+**Response:** "Totally valid — but here's the difference: our beans are roasted within 48 hours, from single-origin farms. Starbucks buys in bulk and roasts months in advance. Once you taste the difference, it's hard to go back. And with Acme Club, our daily drip is actually cheaper than Starbucks."
+
+### 4. "I need to ask my partner/boss" (for catering)
+**Response:** "Of course! I'll email you a one-page proposal with pricing, photos, and a testimonial from [similar business]. There's also a 10% early-booking discount included — valid for 48 hours. What's the best email to send it to?"
+
+### 5. "We already have a coffee supplier" (for corporate)
+**Response:** "That makes sense. Can I ask — are you happy with the quality and service? A lot of our corporate clients switched because we deliver fresh-roasted coffee daily (not weekly) and we include a free team tasting experience. I'd love to drop off a sample box — no obligation. Can I schedule that for this week?"
+
+---
+
+## KPI Target
+Close rate +20% — measured by tracking catering inquiries to bookings and loyalty signups per month.
+
+## Deploy Steps
+1. Print phone script and place at register for staff reference
+2. Set up WhatsApp Business account with auto-greeting
+3. Create 3-message sequence in WhatsApp Business flow
+4. Train all baristas on the 5 objection responses (15-min team huddle)
+5. Role-play scenarios during weekly team meeting
+6. Track weekly: loyalty signups, catering inquiries, close rates
+7. A/B test the WhatsApp sequence: try "first month free" vs "50% off first month"`,
+    },
+    {
       id: "demo-asset-4",
       repairPlanId: "demo-plan-1",
       type: "EMAIL_SEQUENCE" as const,
@@ -1038,7 +1183,7 @@ The bakery didn't need a complete business overhaul — they needed to fix the r
   console.log("  Demo account: demo@tasknator.com / demo1234 (Pro plan)");
   console.log("  Agency demo:  admin@tasknator.com / admin1234 (Agency + white-label)");
   console.log("  Admin panel:  admin@tasknator.com / admin1234 (Super Admin)");
-  console.log("  Demo data: 1 audit (14 findings), 1 plan (12 tasks), 4 assets");
+  console.log("  Demo data: 1 audit (14 findings), 1 plan (12 tasks), 6 assets (incl. Sales Doctor)");
   console.log(`  Blog posts: ${posts.length} articles`);
 }
 

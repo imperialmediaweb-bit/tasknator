@@ -5,6 +5,8 @@ import { db } from "@/lib/db";
 import { generateWithFallback } from "@/lib/ai/provider";
 import { ASSET_SYSTEM_PROMPT, buildAssetPrompt } from "@/lib/ai/prompts";
 import { decrypt } from "@/lib/crypto";
+import { canAccessModule } from "@/lib/billing/plans";
+import { PlanTier } from "@prisma/client";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -34,6 +36,27 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const biz = asset.repairPlan.businessProfile;
     const workspaceId = biz.workspaceId;
+
+    // Module access check
+    const ASSET_MODULE_MAP: Record<string, string> = {
+      OFFER_PACKAGES: "SALES_DOCTOR",
+      SALES_SCRIPTS: "SALES_DOCTOR",
+      REVIEW_REPLIES: "REPUTATION_FIXER",
+      WINBACK_MESSAGES: "CLIENT_RECOVERY",
+      AD_COPY: "ADS_REPAIR",
+      SEO_PLAN: "SEO_PLANNER",
+      COST_CHECKLIST: "COST_CUTTER",
+    };
+    const requiredModule = ASSET_MODULE_MAP[asset.type];
+    if (requiredModule) {
+      const plan = biz.workspace.plan as PlanTier;
+      if (!canAccessModule(plan, requiredModule)) {
+        return NextResponse.json(
+          { error: `Your plan does not include the ${requiredModule.replace(/_/g, " ")} module. Please upgrade.` },
+          { status: 403 }
+        );
+      }
+    }
 
     // Save current as version
     const nextVersion = (asset.versions[0]?.version ?? 0) + 1;
