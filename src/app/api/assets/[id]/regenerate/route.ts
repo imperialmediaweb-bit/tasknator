@@ -69,21 +69,36 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       },
     });
 
-    // Get providers
+    // Get providers — check workspace keys, SystemConfig DB keys, and env vars
     const providerKeys = await db.providerKey.findMany({
       where: { workspaceId, isActive: true },
     });
 
     const providers: { type: any; apiKey: string }[] = [];
     for (const pk of providerKeys) {
-      const apiKey = await decrypt(pk.encryptedKey, pk.nonce);
-      providers.push({ type: pk.provider, apiKey });
+      try {
+        const apiKey = await decrypt(pk.encryptedKey, pk.nonce);
+        providers.push({ type: pk.provider, apiKey });
+      } catch (decryptErr: any) {
+        console.error("Failed to decrypt workspace provider key:", decryptErr.message);
+      }
     }
-    if (process.env.ANTHROPIC_API_KEY) providers.push({ type: "ANTHROPIC", apiKey: process.env.ANTHROPIC_API_KEY });
-    if (process.env.OPENAI_API_KEY) providers.push({ type: "OPENAI", apiKey: process.env.OPENAI_API_KEY });
+
+    // Also check SystemConfig table (platform-level keys stored in DB)
+    const platformConfigs = await db.systemConfig.findMany({
+      where: { key: { in: ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"] } },
+    });
+    const dbKeys: Record<string, string> = {};
+    for (const c of platformConfigs) dbKeys[c.key] = c.value;
+
+    const getKey = (name: string) => dbKeys[name] || process.env[name] || "";
+
+    if (getKey("ANTHROPIC_API_KEY")) providers.push({ type: "ANTHROPIC", apiKey: getKey("ANTHROPIC_API_KEY") });
+    if (getKey("OPENAI_API_KEY")) providers.push({ type: "OPENAI", apiKey: getKey("OPENAI_API_KEY") });
+    if (getKey("GEMINI_API_KEY")) providers.push({ type: "GEMINI", apiKey: getKey("GEMINI_API_KEY") });
 
     if (providers.length === 0) {
-      return NextResponse.json({ error: "No AI providers configured" }, { status: 400 });
+      return NextResponse.json({ error: "No AI providers configured. Please add an API key in Settings → AI Keys." }, { status: 400 });
     }
 
     const context = `Root cause: ${asset.repairPlan.summary || "N/A"}. Business: ${biz.description || biz.industry}`;
