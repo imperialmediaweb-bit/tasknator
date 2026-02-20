@@ -76,6 +76,11 @@ export default async function AssetsPage() {
               </div>
               <h3 className="font-medium text-slate-900 text-sm">{asset.title}</h3>
               <p className="text-xs text-slate-400 mt-1">{asset.businessName}</p>
+              {asset.kpi && (
+                <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded mt-2 inline-block">
+                  KPI: {asset.kpi}
+                </span>
+              )}
               <div className="flex items-center justify-between mt-3 text-xs text-slate-400">
                 <span>{asset.versions.length} version{asset.versions.length !== 1 ? "s" : ""}</span>
                 <span>{new Date(asset.updatedAt).toLocaleDateString()}</span>

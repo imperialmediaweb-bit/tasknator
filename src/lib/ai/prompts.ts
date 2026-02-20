@@ -27,7 +27,7 @@ export function buildAuditPrompt(business: {
   tiktokUrl?: string | null;
   linkedinUrl?: string | null;
   googleBusinessUrl?: string | null;
-}): string {
+}, crawlSummary?: string): string {
   return `Analyze the following business and produce a diagnostic audit:
 
 BUSINESS PROFILE:
@@ -54,7 +54,7 @@ METRICS:
 
 PRIMARY GOAL: ${business.primaryGoal || "Not specified"}
 MAIN PAIN: ${business.mainPain || "Not specified"}
-
+${crawlSummary ? `\n${crawlSummary}\n` : ""}
 Produce a JSON response with this exact structure:
 {
   "overallScore": number,
@@ -122,36 +122,49 @@ Output JSON:
 }`;
 }
 
-export const ASSET_SYSTEM_PROMPT = `You are BusinessFix AI, a content generation engine for business recovery. Generate professional, ready-to-use business assets.
+export const ASSET_SYSTEM_PROMPT = `You are BusinessFix AI, an execution-focused content engine for business recovery. Generate assets that are READY TO USE immediately — not templates, not suggestions.
 
 RULES:
-- Content must be professional and ethical
+- Every asset must include specific, copy-paste-ready content
+- Include 2-3 variations of key elements (headlines, hooks, CTAs)
 - Never generate fake testimonials (use [PLACEHOLDER] labels)
-- All content should be editable
-- Be specific to the business industry
+- All content should be industry-specific and personalized to the business
+- Include a "kpiTarget" field with a measurable success metric
+- Include a "deploySteps" array with step-by-step deployment instructions
 - Output valid JSON only.`;
 
 export function buildAssetPrompt(
   assetType: string,
   businessName: string,
   industry: string,
-  context: string
+  context: string,
+  taskInfo?: { title: string; description: string; phase: string }
 ): string {
   const typeInstructions: Record<string, string> = {
-    WEBSITE_COPY: `Generate website copy: hero headline+subheadline+CTA, about section, 3 services, 5 FAQs, contact text, meta title+description. Output JSON.`,
-    AD_COPY: `Generate: 3 Meta ad variations, 3 Google Search ad variations, 10 keywords. Output JSON.`,
-    EMAIL_SEQUENCE: `Generate 5-email sequence: welcome, value prop, social proof ([PLACEHOLDER] for testimonials), offer, follow-up. Output JSON.`,
-    REVIEW_REPLIES: `Generate: 3 positive review replies, 3 negative review replies, 2 "ask for review" templates. Output JSON.`,
-    SEO_PLAN: `Generate: 30 blog article ideas with outlines, 5 internal linking suggestions, 10-item on-page SEO checklist. Output JSON.`,
-    SALES_SCRIPTS: `Generate: phone call script, WhatsApp 3-message sequence, 5 objection handling responses. Output JSON.`,
-    OFFER_PACKAGES: `Generate: 3-tier pricing (Basic/Standard/Premium) with features, ideal customer, upsell suggestions. Output JSON.`,
-    WINBACK_MESSAGES: `Generate: 3 email win-back messages, 2 SMS win-back, 1 special offer template. Output JSON.`,
-    COST_CHECKLIST: `Generate: 15 cost-cutting areas with savings potential and actions. Output JSON.`,
+    WEBSITE_COPY: `Generate website copy: hero headline+subheadline+CTA, about section, 3 services, 5 FAQs, contact text, meta title+description. Include kpiTarget and deploySteps. Output JSON.`,
+    AD_COPY: `Generate: 3 Meta ad variations (headline, primary text, CTA), 3 Google Search ad variations (headlines, descriptions), 10 keywords with match types, 3 hook variations. Include A/B test recommendations. Target: CTR > 2%. Include kpiTarget and deploySteps. Output JSON.`,
+    EMAIL_SEQUENCE: `Generate 5-email sequence: welcome, value prop, social proof ([PLACEHOLDER] for testimonials), offer, follow-up. Each with subject line, preview text, full body. Include kpiTarget and deploySteps. Output JSON.`,
+    REVIEW_REPLIES: `Generate: 3 positive review replies, 3 negative review replies, 2 "ask for review" templates. Include kpiTarget and deploySteps. Output JSON.`,
+    SEO_PLAN: `Generate: 30 blog article ideas with outlines, 5 internal linking suggestions, 10-item on-page SEO checklist. Include kpiTarget and deploySteps. Output JSON.`,
+    SALES_SCRIPTS: `Generate: phone call script, WhatsApp 3-message sequence, 5 objection handling responses. Include kpiTarget and deploySteps. Output JSON.`,
+    OFFER_PACKAGES: `Generate: 3-tier pricing (Basic/Standard/Premium) with features, ideal customer, upsell suggestions. Include kpiTarget and deploySteps. Output JSON.`,
+    WINBACK_MESSAGES: `Generate: 3 email win-back messages, 2 SMS win-back, 1 special offer template. Include kpiTarget and deploySteps. Output JSON.`,
+    COST_CHECKLIST: `Generate: 15 cost-cutting areas with savings potential and actions. Include kpiTarget and deploySteps. Output JSON.`,
+    HOOK_SCRIPTS: `Generate 10 attention hooks for short-form video content (TikTok, Reels, Shorts). Each hook must include: hookLine (first 3 seconds, the attention grabber), setup (next 5 seconds, the context), payoff (remaining, the value delivery), filmingNotes (camera angle, lighting, props), platform (best platform for this hook). Target: 50% hook rate. Output JSON: { hooks: [...], kpiTarget: "Hook rate > 50%", deploySteps: ["step1", ...] }`,
+    UGC_SCRIPTS: `Generate 3 complete UGC-style video scripts in different lengths (30s, 60s, 90s). Each must include: duration, fullScript (word-for-word what to say), shotList (numbered list of shots), bRollSuggestions (supplementary footage), cta (call to action), talentBrief (who should deliver this, appearance, tone). Target: CTR > 3%. Output JSON: { scripts: [...], kpiTarget: "CTR > 3%", deploySteps: ["step1", ...] }`,
+    SOCIAL_CAPTIONS: `Generate 20 social media captions: 7 for Instagram, 7 for Facebook, 6 for LinkedIn. Each must include: platform, captionText, hashtags (5 each), cta, bestPostingTime. Also include a weeklyCalendar mapping days to specific post themes. Target: 5% engagement rate. Output JSON: { captions: [...], weeklyCalendar: {...}, kpiTarget: "Engagement rate > 5%", deploySteps: ["step1", ...] }`,
+    CREATIVE_BRIEF: `Generate a complete creative brief for a paid advertising campaign. Include: targetAudience (demographics, psychographics, pain points), messagingPillars (3 key messages), adConcepts (3 concepts each with headline, body copy, visual description, CTA), recommendedPlatforms, budgetAllocation (percentage split across platforms), abTestPlan (what to test first). Target: ROAS > 3x. Output JSON: { targetAudience: {...}, messagingPillars: [...], adConcepts: [...], platforms: [...], budgetSplit: {...}, abTestPlan: {...}, kpiTarget: "ROAS > 3x", deploySteps: ["step1", ...] }`,
   };
+
+  const taskContext = taskInfo
+    ? `\nLINKED TASK: ${taskInfo.title} (${taskInfo.phase.replace("_", " ")})
+Task Description: ${taskInfo.description}
+This asset must directly help complete this task. Include specific actions to execute the task.`
+    : "";
 
   return `Generate ${assetType} for:
 Business: ${businessName} (${industry})
-Context: ${context}
+Context: ${context}${taskContext}
 
-${typeInstructions[assetType] || "Generate appropriate content. Output JSON."}`;
+${typeInstructions[assetType] || "Generate appropriate content with kpiTarget and deploySteps. Output JSON."}`;
 }

@@ -23,6 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             },
           },
         },
+        task: true,
         versions: { orderBy: { version: "desc" }, take: 1 },
       },
     });
@@ -64,10 +65,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const context = `Root cause: ${asset.repairPlan.summary || "N/A"}. Business: ${biz.description || biz.industry}`;
 
+    const taskInfo = asset.task
+      ? { title: asset.task.title, description: asset.task.description, phase: asset.task.phase }
+      : undefined;
+
     const response = await generateWithFallback(providers, {
       messages: [
         { role: "system", content: ASSET_SYSTEM_PROMPT },
-        { role: "user", content: buildAssetPrompt(asset.type, biz.name, biz.industry, context) },
+        { role: "user", content: buildAssetPrompt(asset.type, biz.name, biz.industry, context, taskInfo) },
       ],
       maxTokens: 4096,
       temperature: 0.7,

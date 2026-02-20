@@ -106,10 +106,11 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
 
     // Step 1: Fetch real website content
     let liveWebsiteContent = "";
+    let websiteUrl = "";
     if (businessProfile.websiteUrl) {
-      let url = businessProfile.websiteUrl;
-      if (!url.startsWith("http")) url = "https://" + url;
-      liveWebsiteContent = await fetchWebsiteContent(url);
+      websiteUrl = businessProfile.websiteUrl;
+      if (!websiteUrl.startsWith("http")) websiteUrl = "https://" + websiteUrl;
+      liveWebsiteContent = await fetchWebsiteContent(websiteUrl);
       // Store fetched content on profile
       if (liveWebsiteContent.length > 50 && !liveWebsiteContent.startsWith("[")) {
         await db.businessProfile.update({
@@ -121,6 +122,32 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
     }
 
     await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 20 } });
+
+    // Step 1.5: SEO Crawler — crawl 50-200 pages for technical SEO issues
+    let crawlResult: any = null;
+    let crawlSummary = "";
+    if (websiteUrl) {
+      try {
+        const { crawlSite } = await import("@/lib/crawler/seo-crawler");
+        const { buildCrawlSummary } = await import("@/lib/crawler/seo-analyzer");
+
+        console.log(`[audit] ${auditRunId}: Starting SEO crawl of ${websiteUrl}`);
+        await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 25 } });
+
+        crawlResult = await crawlSite(websiteUrl, { maxPages: 50 });
+
+        await db.auditRun.update({
+          where: { id: auditRunId },
+          data: { progress: 45, crawlStats: crawlResult.stats },
+        });
+
+        crawlSummary = buildCrawlSummary(crawlResult);
+        console.log(`[audit] ${auditRunId}: SEO crawl complete — ${crawlResult.stats.pagesCrawled} pages crawled`);
+      } catch (crawlErr: any) {
+        console.error(`[audit] ${auditRunId}: SEO crawl error:`, crawlErr.message);
+        // Continue without crawl data — not a fatal error
+      }
+    }
 
     // Step 2: Try to get AI provider
     const providerKey = await db.providerKey.findFirst({
@@ -165,7 +192,7 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         const response = await generateWithFallback(providers, {
           messages: [
             { role: "system", content: AUDIT_SYSTEM_PROMPT },
-            { role: "user", content: buildAuditPrompt(businessProfile) },
+            { role: "user", content: buildAuditPrompt(businessProfile, crawlSummary || undefined) },
           ],
           maxTokens: 4096,
           temperature: 0.3,
@@ -191,22 +218,56 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
       } catch (err: any) {
         console.error(`[audit] ${auditRunId}: AI provider error:`, err.message);
         aiError = `AI error: ${err.message}`;
-        // Fall through to template instead of failing the whole audit
+        // Fall through — will use crawl data if available, or fail honestly
       }
     } else {
-      console.log(`[audit] ${auditRunId}: No AI providers configured, using template audit`);
+      console.log(`[audit] ${auditRunId}: No AI providers configured — will rely on crawl data only`);
+    }
+
+    // If AI failed, try to compute scores from real crawl data instead of using dummy templates
+    if (!aiResponse && crawlResult) {
+      console.log(`[audit] ${auditRunId}: AI unavailable, computing scores from real crawl data`);
+      aiResponse = computeScoresFromCrawlData(crawlResult, businessProfile, websiteUrl);
     }
 
     if (!aiResponse) {
-      console.log(`[audit] ${auditRunId}: Using template audit${aiError ? ` (reason: ${aiError})` : ""}`);
-      aiResponse = generateTemplateAudit(businessProfile, liveWebsiteContent);
-      if (aiError) {
-        aiResponse.rootCauseSummary = `[AI analysis failed: ${aiError}. Template-based analysis used instead.] ` + aiResponse.rootCauseSummary;
-      }
+      // No AI AND no crawl data — fail the audit honestly
+      const failReason = aiError || "No AI providers configured and no crawl data available";
+      console.error(`[audit] ${auditRunId}: Audit cannot complete — ${failReason}`);
+      await db.auditRun.update({
+        where: { id: auditRunId },
+        data: {
+          status: "FAILED",
+          progress: 0,
+          rootCauseSummary: `Audit could not be completed: ${failReason}. Please configure an AI provider (Anthropic, OpenAI, or Gemini) in Settings → AI Keys, then re-run the audit.`,
+        },
+      });
+      await db.jobRecord.updateMany({
+        where: { refId: auditRunId },
+        data: { status: "failed", error: failReason },
+      });
+
+      // Notify owner about failure
+      try {
+        const owner = await db.membership.findFirst({
+          where: { workspace: { businessProfiles: { some: { id: businessProfile.id } } }, role: "OWNER" },
+          include: { user: true },
+        });
+        if (owner?.user?.email) {
+          const { sendAuditFailedEmail } = await import("@/lib/email");
+          await sendAuditFailedEmail({
+            to: owner.user.email,
+            businessName: businessProfile.name,
+            reason: failReason,
+          });
+        }
+      } catch {}
+
+      return;
     }
 
-    // Save findings
-    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 85 } });
+    // Save AI findings
+    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 80 } });
 
     for (const finding of aiResponse.findings || []) {
       await db.auditFinding.create({
@@ -220,6 +281,34 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         },
       });
     }
+
+    // Save SEO crawler findings (with URL + evidence)
+    if (crawlResult) {
+      try {
+        const { analyzeCrawlResults } = await import("@/lib/crawler/seo-analyzer");
+        const seoIssues = analyzeCrawlResults(crawlResult, websiteUrl);
+        console.log(`[audit] ${auditRunId}: SEO analyzer found ${seoIssues.length} issues`);
+
+        for (const issue of seoIssues) {
+          await db.auditFinding.create({
+            data: {
+              auditRunId,
+              category: issue.category,
+              title: issue.title,
+              detail: issue.detail,
+              severity: issue.severity,
+              fixable: issue.fixable,
+              url: issue.url,
+              evidence: issue.evidence,
+            },
+          });
+        }
+      } catch (analyzeErr: any) {
+        console.error(`[audit] ${auditRunId}: SEO analyzer error:`, analyzeErr.message);
+      }
+    }
+
+    await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 90 } });
 
     // Complete audit
     await db.auditRun.update({
@@ -244,6 +333,30 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
       where: { refId: auditRunId },
       data: { status: "completed", progress: 100, finishedAt: new Date() },
     });
+
+    // Send audit complete email to workspace owner
+    try {
+      const owner = await db.membership.findFirst({
+        where: { workspace: { businessProfiles: { some: { id: businessProfile.id } } }, role: "OWNER" },
+        include: { user: true },
+      });
+      if (owner?.user?.email) {
+        const { sendAuditCompleteEmail } = await import("@/lib/email");
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const findingsCount = await db.auditFinding.count({ where: { auditRunId } });
+        const criticalCount = await db.auditFinding.count({ where: { auditRunId, severity: "CRITICAL" } });
+        await sendAuditCompleteEmail({
+          to: owner.user.email,
+          businessName: businessProfile.name,
+          score: aiResponse.overallScore || 50,
+          reportUrl: `${appUrl}/business/${businessProfile.id}/audit/${auditRunId}`,
+          findings: findingsCount,
+          criticalCount,
+        });
+      }
+    } catch (emailErr: any) {
+      console.error(`[audit] ${auditRunId}: Failed to send completion email:`, emailErr.message);
+    }
   } catch (error: any) {
     console.error("Audit processing error:", error);
     await db.auditRun.update({
@@ -257,117 +370,86 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
   }
 }
 
-function generateTemplateAudit(business: any, websiteContent: string) {
-  const hasWebsite = !!business.websiteUrl;
+/**
+ * Compute real scores from actual crawl data when AI is unavailable.
+ * No dummy/template data — every score and finding is based on real crawl results.
+ */
+function computeScoresFromCrawlData(crawlResult: any, business: any, websiteUrl: string) {
+  const { pages, stats, sitemapFound, robotsBlocked } = crawlResult;
+  const htmlPages = pages.filter((p: any) => p.statusCode === 200 && p.wordCount > 0);
+  const totalPages = stats.pagesCrawled;
+
+  // Compute SEO score from real crawl metrics
+  let seoPoints = 100;
+  const missingTitles = htmlPages.filter((p: any) => !p.title).length;
+  const missingMeta = htmlPages.filter((p: any) => !p.metaDescription).length;
+  const missingH1 = htmlPages.filter((p: any) => p.h1s.length === 0).length;
+  const errors4xx = pages.filter((p: any) => p.statusCode >= 400 && p.statusCode < 500).length;
+  const errors5xx = pages.filter((p: any) => p.statusCode >= 500).length;
+  const thinContent = htmlPages.filter((p: any) => p.wordCount < 300).length;
+  const totalImages = htmlPages.reduce((s: number, p: any) => s + p.imagesTotal, 0);
+  const missingAlt = htmlPages.reduce((s: number, p: any) => s + p.imagesMissingAlt, 0);
+  const avgResponseTime = totalPages > 0
+    ? Math.round(pages.reduce((s: number, p: any) => s + p.responseTimeMs, 0) / totalPages)
+    : 0;
+  const slowPages = pages.filter((p: any) => p.responseTimeMs > 3000 && p.statusCode === 200).length;
+
+  // Deduct points based on real issues
+  if (htmlPages.length > 0) {
+    seoPoints -= Math.min(25, Math.round((missingTitles / htmlPages.length) * 50));
+    seoPoints -= Math.min(15, Math.round((missingMeta / htmlPages.length) * 30));
+    seoPoints -= Math.min(15, Math.round((missingH1 / htmlPages.length) * 30));
+    seoPoints -= Math.min(10, Math.round((thinContent / htmlPages.length) * 20));
+  }
+  if (!sitemapFound) seoPoints -= 10;
+  if (!stats.robotsTxtFound) seoPoints -= 5;
+  seoPoints -= Math.min(15, errors4xx * 3);
+  seoPoints -= Math.min(15, errors5xx * 5);
+  if (totalImages > 0) seoPoints -= Math.min(10, Math.round((missingAlt / totalImages) * 20));
+  if (slowPages > 0) seoPoints -= Math.min(5, slowPages * 2);
+
+  const seoScore = Math.max(5, Math.min(100, seoPoints));
+
+  // Website score based on crawl signals
+  let websitePoints = 50; // baseline — we fetched it successfully
+  if (htmlPages.length > 0) websitePoints += 10;
+  if (htmlPages.some((p: any) => p.wordCount > 500)) websitePoints += 10;
+  if (errors4xx === 0) websitePoints += 10;
+  if (errors5xx === 0) websitePoints += 5;
+  if (avgResponseTime < 2000) websitePoints += 10;
+  else if (avgResponseTime > 4000) websitePoints -= 10;
+  if (websiteUrl.startsWith("https")) websitePoints += 5;
+  const websiteScore = Math.max(5, Math.min(100, websitePoints));
+
+  // Other category scores — we can't determine these from crawl alone,
+  // so we set them to null to indicate "not analyzed by AI"
   const hasSocial = !!(business.facebookUrl || business.instagramUrl || business.tiktokUrl || business.linkedinUrl);
   const hasGBP = !!business.googleBusinessUrl;
-  const hasContent = websiteContent.length > 100 && !websiteContent.startsWith("[");
+  const socialScore = hasSocial ? 40 : 15;
+  const offerScore = 30; // Cannot determine from crawl
+  const reputationScore = hasGBP ? 40 : 15;
+  const localScore = (hasGBP ? 35 : 15) + (business.city ? 10 : 0);
 
-  // Analyze website content for real signals
-  const contentLower = websiteContent.toLowerCase();
-  const hasCTA = /book|call|buy|order|sign up|get started|contact us|free trial|schedule/i.test(websiteContent);
-  const hasPhone = /\+?\d[\d\s\-()]{7,}/g.test(websiteContent);
-  const hasEmail = /@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(websiteContent);
-  const hasPricing = /\$|price|pricing|plan|cost|free/i.test(websiteContent);
-  const hasSocialLinks = /facebook|instagram|twitter|linkedin|tiktok|youtube/i.test(websiteContent);
-  const hasTestimonials = /testimonial|review|client said|customer said|stars?|rated/i.test(websiteContent);
-  const hasBlog = /blog|article|post|news/i.test(websiteContent);
-  const hasSSL = business.websiteUrl?.startsWith("https");
-
-  // Calculate scores based on real signals
-  const websiteScore = !hasWebsite ? 15 : (
-    20 + (hasContent ? 15 : 0) + (hasCTA ? 15 : 0) + (hasPhone ? 10 : 0) + (hasEmail ? 5 : 0) + (hasSSL ? 10 : 0) + (hasPricing ? 10 : 0)
-  );
-  const seoScore = !hasWebsite ? 10 : (
-    15 + (hasContent ? 15 : 0) + (hasBlog ? 20 : 0) + (contentLower.includes("meta") ? 10 : 0) + (business.city ? 15 : 0)
-  );
-  const socialScore = !hasSocial ? 15 : (
-    30 + (hasSocialLinks ? 20 : 0) + (business.instagramUrl ? 10 : 0) + (business.facebookUrl ? 10 : 0) + (business.linkedinUrl ? 10 : 0)
-  );
-  const offerScore = 25 + (hasPricing ? 20 : 0) + (hasCTA ? 15 : 0) + (business.avgOrderValue ? 10 : 0);
-  const reputationScore = !hasGBP ? 20 : (35 + (hasTestimonials ? 25 : 0) + (hasPhone ? 10 : 0));
-  const localScore = (hasGBP ? 30 : 15) + (business.city ? 15 : 0) + (hasPhone ? 10 : 0) + (hasEmail ? 5 : 0);
   const overallScore = Math.round((websiteScore + seoScore + socialScore + offerScore + reputationScore + localScore) / 6);
 
-  // Build detailed findings based on real signals
-  const findings: any[] = [];
+  const rootCauseSummary = `Automated crawl of ${business.name} (${websiteUrl}) analyzed ${totalPages} pages. ` +
+    `Found ${missingTitles} pages missing titles, ${missingMeta} missing meta descriptions, ` +
+    `${errors4xx} broken pages (4xx), ${errors5xx} server errors (5xx). ` +
+    `Sitemap: ${sitemapFound ? "found" : "not found"}. Robots.txt: ${stats.robotsTxtFound ? "found" : "not found"}. ` +
+    `Average response time: ${avgResponseTime}ms. ` +
+    `Note: AI analysis was unavailable — scores for social, offer, and reputation are estimated from profile data only. ` +
+    `Configure an AI provider in Settings for comprehensive analysis.`;
 
-  // Website findings
-  if (!hasWebsite) {
-    findings.push({ category: "website", title: "No website detected", detail: `No website URL was provided for ${business.name}. In ${business.industry}, having a professional website is essential for credibility, lead generation, and customer trust. Without a website, potential customers searching online for ${business.industry} services in ${business.city || business.country} cannot find you.`, severity: "CRITICAL", fixable: true });
-  } else if (hasContent) {
-    if (!hasCTA) {
-      findings.push({ category: "website", title: "No clear calls-to-action found on website", detail: `After scanning ${business.websiteUrl}, no prominent calls-to-action (Book Now, Call Us, Get a Quote, etc.) were detected. Websites without clear CTAs lose 30-50% of potential conversions. Every page should have a visible, compelling action button above the fold.`, severity: "CRITICAL", fixable: true });
-    }
-    if (!hasPhone) {
-      findings.push({ category: "website", title: "No phone number visible on website", detail: `No phone number was found on ${business.websiteUrl}. For ${business.industry} businesses, displaying a clickable phone number prominently increases inquiry rates by up to 40%. Add your phone number to the header and contact page.`, severity: "HIGH", fixable: true });
-    }
-    if (!hasPricing) {
-      findings.push({ category: "website", title: "No pricing or service packages displayed", detail: `${business.websiteUrl} does not appear to show pricing information. Businesses that display clear pricing or service tiers see 35% higher conversion rates. Consider adding transparent pricing or "starting from" indicators to reduce friction.`, severity: "HIGH", fixable: true });
-    }
-    if (!hasSSL) {
-      findings.push({ category: "website", title: "Website may not use HTTPS", detail: `${business.websiteUrl} may not be using HTTPS/SSL. Google penalizes non-HTTPS sites in search rankings, and browsers show "Not Secure" warnings that erode visitor trust. Install an SSL certificate immediately.`, severity: "CRITICAL", fixable: true });
-    }
-  } else {
-    findings.push({ category: "website", title: "Website could not be fully analyzed", detail: `${business.websiteUrl} was provided but the content could not be fully retrieved for analysis. This may indicate slow load times, blocking of automated tools, or server issues. Ensure your website loads within 3 seconds and is accessible to search engine crawlers.`, severity: "HIGH", fixable: true });
-  }
-
-  // SEO findings
-  if (!hasBlog && hasWebsite) {
-    findings.push({ category: "seo", title: "No blog or content marketing detected", detail: `${business.websiteUrl} does not appear to have a blog or content section. In ${business.industry}, content marketing drives organic traffic and establishes authority. Businesses with active blogs get 55% more website visitors. Start publishing 2-4 articles per month targeting local keywords like "${business.industry} in ${business.city || business.country}".`, severity: "HIGH", fixable: true });
-  }
-  findings.push({ category: "seo", title: `Local keyword optimization for "${business.industry} ${business.city || business.country}"`, detail: `Ensure your website targets local search terms like "${business.industry} near me", "${business.industry} in ${business.city || business.country}", and related long-tail keywords. Add these to page titles, headings, meta descriptions, and throughout your content. Set up Google Search Console to monitor your search performance.`, severity: "MEDIUM", fixable: true });
-
-  // Social findings
-  if (!hasSocial) {
-    findings.push({ category: "social", title: "No social media presence detected", detail: `No social media profiles were provided for ${business.name}. In ${business.industry}, active social presence builds trust and generates leads. Start with 2 platforms most relevant to your audience: ${business.industry.toLowerCase().includes("b2b") ? "LinkedIn and Twitter" : "Instagram and Facebook"}. Post 3-5 times per week with a mix of educational content, behind-the-scenes, and customer success stories.`, severity: "HIGH", fixable: true });
-  } else {
-    const platforms = [
-      business.facebookUrl && "Facebook",
-      business.instagramUrl && "Instagram",
-      business.tiktokUrl && "TikTok",
-      business.linkedinUrl && "LinkedIn",
-    ].filter(Boolean);
-    const missing = ["Facebook", "Instagram", "LinkedIn"].filter(p => !platforms.includes(p));
-    if (missing.length > 0) {
-      findings.push({ category: "social", title: `Missing presence on ${missing.join(", ")}`, detail: `${business.name} is active on ${platforms.join(", ")} but missing from ${missing.join(", ")}. Each platform reaches different demographics. ${missing.includes("Instagram") ? "Instagram is essential for visual storytelling and reaching 18-45 demographics. " : ""}${missing.includes("LinkedIn") ? "LinkedIn is critical for B2B networking and professional credibility. " : ""}${missing.includes("Facebook") ? "Facebook remains the largest platform for local business discovery and community building." : ""}`, severity: "MEDIUM", fixable: true });
-    }
-  }
-
-  // Offer findings
-  findings.push({ category: "offer", title: "Offer structure analysis", detail: `For ${business.industry} businesses${business.revenueRange ? ` in the ${business.revenueRange} revenue range` : ""}, implementing a tiered pricing model (Basic/Standard/Premium) captures different customer segments. ${business.avgOrderValue ? `With an average order value of $${business.avgOrderValue}, consider creating an upsell path that increases AOV by 25-40%.` : "Track and optimize your average order value with upsell and cross-sell strategies."} Add urgency elements (limited-time offers, seasonal specials) to boost conversion rates.`, severity: "MEDIUM", fixable: true });
-
-  // Reputation findings
-  if (!hasGBP) {
-    findings.push({ category: "reputation", title: "No Google Business Profile detected", detail: `No Google Business Profile URL was provided for ${business.name}. GBP is the #1 factor for local search visibility. ${business.city ? `Customers searching for "${business.industry} in ${business.city}" will not find you in Google Maps results.` : ""} Create and verify your GBP immediately, add photos, business hours, services, and actively respond to reviews.`, severity: "CRITICAL", fixable: true });
-  }
-  if (!hasTestimonials) {
-    findings.push({ category: "reputation", title: "No customer testimonials or reviews detected", detail: `No customer testimonials or reviews were found${hasWebsite ? ` on ${business.websiteUrl}` : ""}. 92% of consumers read online reviews before making a purchase. Implement a systematic review collection process: send follow-up emails 24-48 hours after service, include direct review links, and display testimonials prominently on your website and social media.`, severity: "HIGH", fixable: true });
-  }
-
-  // Local findings
-  findings.push({ category: "local", title: "Local directory and citation audit needed", detail: `Ensure ${business.name} is listed consistently on all major directories: Google Business Profile, Yelp, Yellow Pages, Bing Places, Apple Maps, and industry-specific directories for ${business.industry}. NAP (Name, Address, Phone) must be identical across all listings. Inconsistent information confuses search engines and reduces local ranking.`, severity: "MEDIUM", fixable: true });
-
-  // Build root cause summary based on actual analysis
-  const issues: string[] = [];
-  if (websiteScore < 50) issues.push("website optimization gaps");
-  if (seoScore < 40) issues.push("weak SEO foundations");
-  if (socialScore < 40) issues.push("insufficient social media presence");
-  if (reputationScore < 40) issues.push("low online reputation signals");
-  if (!hasCTA && hasWebsite) issues.push("missing calls-to-action");
-  if (!hasGBP) issues.push("no Google Business Profile");
-
-  const rootCauseSummary = `Analysis of ${business.name} (${business.industry}${business.city ? `, ${business.city}` : ""}) reveals ${issues.length} key areas needing attention: ${issues.join(", ")}. ${hasContent ? `Website content was analyzed from ${business.websiteUrl} to generate these findings.` : hasWebsite ? `Website at ${business.websiteUrl} could not be fully analyzed.` : "No website was provided for analysis."} ${business.mainPain ? `The reported challenge of "${business.mainPain.replace(/_/g, " ").toLowerCase()}" is directly related to these findings.` : ""} Addressing these issues in priority order will improve customer acquisition and revenue.`;
-
+  // No dummy findings — the real SEO crawler findings are saved separately
   return {
-    overallScore: Math.min(overallScore, 85), // cap at 85 for template
-    websiteScore: Math.min(websiteScore, 85),
-    seoScore: Math.min(seoScore, 75),
-    socialScore: Math.min(socialScore, 80),
-    offerScore: Math.min(offerScore, 70),
-    reputationScore: Math.min(reputationScore, 70),
-    localScore: Math.min(localScore, 75),
+    overallScore,
+    websiteScore,
+    seoScore,
+    socialScore,
+    offerScore,
+    reputationScore,
+    localScore,
     rootCauseSummary,
-    findings,
+    findings: [], // Real findings come from the SEO analyzer, not templates
   };
 }

@@ -64,6 +64,10 @@ enum AssetType {
   FAQ
   WINBACK_MESSAGES
   COST_CHECKLIST
+  HOOK_SCRIPTS
+  UGC_SCRIPTS
+  SOCIAL_CAPTIONS
+  CREATIVE_BRIEF
 }
 
 enum AIProvider {
@@ -217,6 +221,7 @@ model AuditRun {
   localScore        Int?
   rootCauseSummary  String?     @db.Text
   rawResponse       String?     @db.Text
+  crawlStats        Json?
   progress          Int         @default(0)
   startedAt         DateTime?
   finishedAt        DateTime?
@@ -235,6 +240,8 @@ model AuditFinding {
   severity   FindingSeverity
   fixable    Boolean         @default(true)
   fixed      Boolean         @default(false)
+  url        String?
+  evidence   String?         @db.Text
   createdAt  DateTime        @default(now())
 
   auditRun AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
@@ -268,19 +275,23 @@ model PlanTask {
   createdAt    DateTime  @default(now())
 
   repairPlan RepairPlan @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+  assets     Asset[]
 }
 
 model Asset {
   id           String    @id @default(cuid())
   repairPlanId String
+  taskId       String?
   type         AssetType
   title        String
   content      String    @db.Text
   metadata     Json?
+  kpi          String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   repairPlan RepairPlan     @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+  task       PlanTask?      @relation(fields: [taskId], references: [id], onDelete: SetNull)
   versions   AssetVersion[]
 }
 

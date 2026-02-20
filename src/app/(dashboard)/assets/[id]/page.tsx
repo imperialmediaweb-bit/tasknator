@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles } from "lucide-react";
+import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles, Target, CheckCircle2 } from "lucide-react";
 
 interface Asset {
   id: string;
   type: string;
   title: string;
   content: string;
+  kpi: string | null;
+  task: { id: string; title: string; phase: string } | null;
   versions: { id: string; version: number; content: string; createdAt: string }[];
   updatedAt: string;
 }
@@ -101,6 +103,18 @@ export default function AssetEditorPage() {
           <p className="text-sm text-gray-500 mt-1">
             Type: {asset.type.replace(/_/g, " ")} · Last updated: {new Date(asset.updatedAt).toLocaleString()}
           </p>
+          {asset.kpi && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <Target className="w-3.5 h-3.5 text-green-600" />
+              <span className="text-xs text-gray-600">KPI: <strong className="text-green-700">{asset.kpi}</strong></span>
+            </div>
+          )}
+          {asset.task && (
+            <div className="flex items-center gap-2 mt-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs text-gray-600">Linked to: <strong>{asset.task.title}</strong> ({asset.task.phase.replace("_", " ")})</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">

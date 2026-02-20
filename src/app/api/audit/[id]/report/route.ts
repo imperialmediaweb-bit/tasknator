@@ -59,7 +59,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         title: f.title,
         severity: f.severity,
         detail: f.detail,
+        url: f.url || undefined,
+        evidence: f.evidence || undefined,
       })),
+      crawlStats: auditRun.crawlStats as any,
       generatedAt: new Date(auditRun.createdAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",

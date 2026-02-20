@@ -173,20 +173,26 @@ export default function AdminPage() {
     } catch {}
   }
 
+  const [planSaving, setPlanSaving] = useState<string | null>(null);
+
   async function assignPlan(userId: string, plan: string) {
+    setPlanSaving(userId);
     try {
       const res = await fetch("/api/admin/users", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, plan }),
       });
+      const data = await res.json();
       if (res.ok) {
         await loadUsers();
       } else {
-        const data = await res.json();
         alert(data.error || "Failed to assign plan");
       }
-    } catch {}
+    } catch {
+      alert("Network error");
+    }
+    setPlanSaving(null);
   }
 
   // Homepage
@@ -487,10 +493,12 @@ export default function AdminPage() {
                       <select
                         value={u.plan || "STARTER"}
                         onChange={(e) => assignPlan(u.id, e.target.value)}
-                        className={`text-xs px-2 py-1 rounded-lg font-medium border cursor-pointer transition-colors ${
-                          u.plan === "AGENCY" ? "bg-purple-50 text-purple-700 border-purple-200" :
-                          u.plan === "PRO" ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
-                          "bg-slate-50 text-slate-600 border-slate-200"
+                        disabled={planSaving === u.id}
+                        className={`text-xs px-2.5 py-1.5 rounded-lg font-bold border cursor-pointer transition-all ${
+                          planSaving === u.id ? "opacity-50 cursor-wait" :
+                          u.plan === "AGENCY" ? "bg-purple-100 text-purple-700 border-purple-300" :
+                          u.plan === "PRO" ? "bg-indigo-100 text-indigo-700 border-indigo-300" :
+                          "bg-slate-100 text-slate-600 border-slate-300"
                         }`}
                       >
                         <option value="STARTER">STARTER</option>

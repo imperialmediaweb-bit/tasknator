@@ -20,7 +20,7 @@ CREATE TYPE "FindingSeverity" AS ENUM ('CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'INF
 CREATE TYPE "PlanPhase" AS ENUM ('DAY_30', 'DAY_60', 'DAY_90');
 
 -- CreateEnum
-CREATE TYPE "AssetType" AS ENUM ('WEBSITE_COPY', 'AD_COPY', 'EMAIL_SEQUENCE', 'SMS_SEQUENCE', 'REVIEW_REPLIES', 'SEO_PLAN', 'SALES_SCRIPTS', 'OFFER_PACKAGES', 'FAQ', 'WINBACK_MESSAGES', 'COST_CHECKLIST');
+CREATE TYPE "AssetType" AS ENUM ('WEBSITE_COPY', 'AD_COPY', 'EMAIL_SEQUENCE', 'SMS_SEQUENCE', 'REVIEW_REPLIES', 'SEO_PLAN', 'SALES_SCRIPTS', 'OFFER_PACKAGES', 'FAQ', 'WINBACK_MESSAGES', 'COST_CHECKLIST', 'HOOK_SCRIPTS', 'UGC_SCRIPTS', 'SOCIAL_CAPTIONS', 'CREATIVE_BRIEF');
 
 -- CreateEnum
 CREATE TYPE "AIProvider" AS ENUM ('ANTHROPIC', 'OPENAI', 'GEMINI');
@@ -154,6 +154,7 @@ CREATE TABLE "AuditRun" (
     "localScore" INTEGER,
     "rootCauseSummary" TEXT,
     "rawResponse" TEXT,
+    "crawlStats" JSONB,
     "progress" INTEGER NOT NULL DEFAULT 0,
     "startedAt" TIMESTAMP(3),
     "finishedAt" TIMESTAMP(3),
@@ -172,6 +173,8 @@ CREATE TABLE "AuditFinding" (
     "severity" "FindingSeverity" NOT NULL,
     "fixable" BOOLEAN NOT NULL DEFAULT true,
     "fixed" BOOLEAN NOT NULL DEFAULT false,
+    "url" TEXT,
+    "evidence" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "AuditFinding_pkey" PRIMARY KEY ("id")
@@ -209,10 +212,12 @@ CREATE TABLE "PlanTask" (
 CREATE TABLE "Asset" (
     "id" TEXT NOT NULL,
     "repairPlanId" TEXT NOT NULL,
+    "taskId" TEXT,
     "type" "AssetType" NOT NULL,
     "title" TEXT NOT NULL,
     "content" TEXT NOT NULL,
     "metadata" JSONB,
+    "kpi" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -480,6 +485,9 @@ ALTER TABLE "PlanTask" ADD CONSTRAINT "PlanTask_repairPlanId_fkey" FOREIGN KEY (
 
 -- AddForeignKey
 ALTER TABLE "Asset" ADD CONSTRAINT "Asset_repairPlanId_fkey" FOREIGN KEY ("repairPlanId") REFERENCES "RepairPlan"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Asset" ADD CONSTRAINT "Asset_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "PlanTask"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AssetVersion" ADD CONSTRAINT "AssetVersion_assetId_fkey" FOREIGN KEY ("assetId") REFERENCES "Asset"("id") ON DELETE CASCADE ON UPDATE CASCADE;

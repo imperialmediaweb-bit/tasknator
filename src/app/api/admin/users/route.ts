@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       isAdmin: u.isAdmin,
       createdAt: u.createdAt,
       workspace: u.memberships[0]?.workspace?.name || null,
+      workspaceId: u.memberships[0]?.workspace?.id || null,
       plan: u.memberships[0]?.workspace?.plan || null,
       role: u.memberships[0]?.role || null,
       subscriptionStatus: u.memberships[0]?.workspace?.subscription?.status || null,
@@ -63,13 +64,27 @@ export async function PATCH(req: NextRequest) {
       }
 
       // Find user's workspace through membership
-      const membership = await db.membership.findFirst({
+      let membership = await db.membership.findFirst({
         where: { userId },
         select: { workspaceId: true },
       });
 
+      // If user has no workspace, auto-create one
       if (!membership) {
-        return NextResponse.json({ error: "User has no workspace" }, { status: 400 });
+        const user = await db.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+        if (!user) {
+          return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+        const slug = user.email.split("@")[0].replace(/[^a-z0-9]/gi, "-").toLowerCase() + "-ws";
+        const workspace = await db.workspace.create({
+          data: {
+            name: user.name ? `${user.name}'s Workspace` : "My Workspace",
+            slug,
+            plan: body.plan,
+            memberships: { create: { userId, role: "OWNER" } },
+          },
+        });
+        return NextResponse.json({ success: true, message: `Workspace created with ${body.plan} plan` });
       }
 
       await db.workspace.update({

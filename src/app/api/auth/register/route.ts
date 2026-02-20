@@ -53,7 +53,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ 
+    // Send welcome email (non-blocking)
+    import("@/lib/email").then(({ sendWelcomeEmail }) => {
+      sendWelcomeEmail({ to: email, name: name || "" }).catch(console.error);
+    }).catch(console.error);
+
+    return NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name },
       workspace: { id: workspace.id, slug: workspace.slug },
     }, { status: 201 });

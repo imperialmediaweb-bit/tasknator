@@ -87,26 +87,70 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     }
 
-    // Generate initial assets based on finding categories
+    // Generate task-linked assets with KPI based on finding categories
     const categories = Array.from(new Set(auditRun.findings.map((f) => f.category)));
-    const assetMap: Record<string, { type: AssetType; title: string }> = {
-      website: { type: "WEBSITE_COPY", title: "Website Copy & CTAs" },
-      seo: { type: "SEO_PLAN", title: "SEO Strategy & Content Plan" },
-      social: { type: "AD_COPY", title: "Social Media Ad Copy" },
-      offer: { type: "OFFER_PACKAGES", title: "Offer & Pricing Packages" },
-      reputation: { type: "REVIEW_REPLIES", title: "Review Response Templates" },
-      local: { type: "EMAIL_SEQUENCE", title: "Customer Outreach Emails" },
+    const taskAssetMap: Record<string, { type: AssetType; title: string; kpi: string }[]> = {
+      website: [
+        { type: "WEBSITE_COPY", title: "Website Copy & CTAs", kpi: "Bounce rate < 40%" },
+      ],
+      seo: [
+        { type: "SEO_PLAN", title: "SEO Strategy & Content Plan", kpi: "Organic traffic +20% in 60 days" },
+      ],
+      social: [
+        { type: "AD_COPY", title: "Social Media Ad Copy", kpi: "CTR > 2%" },
+        { type: "SOCIAL_CAPTIONS", title: "Social Media Captions & Calendar", kpi: "Engagement rate > 5%" },
+        { type: "HOOK_SCRIPTS", title: "Video Hook Scripts", kpi: "Hook rate > 50%" },
+        { type: "UGC_SCRIPTS", title: "UGC Video Scripts", kpi: "Video CTR > 3%" },
+      ],
+      offer: [
+        { type: "OFFER_PACKAGES", title: "Offer & Pricing Packages", kpi: "Conversion rate +15%" },
+        { type: "CREATIVE_BRIEF", title: "Ad Campaign Creative Brief", kpi: "ROAS > 3x" },
+      ],
+      reputation: [
+        { type: "REVIEW_REPLIES", title: "Review Response Templates", kpi: "Response rate 100% within 24h" },
+      ],
+      local: [
+        { type: "EMAIL_SEQUENCE", title: "Customer Outreach Emails", kpi: "Open rate > 25%" },
+      ],
     };
 
+    // Find tasks for linking
+    const allTasks = await db.planTask.findMany({
+      where: { repairPlanId: repairPlan.id },
+      orderBy: { sortOrder: "asc" },
+    });
+
+    const createdAssetTypes = new Set<string>();
+
     for (const cat of categories) {
-      const assetDef = assetMap[cat];
-      if (assetDef) {
+      const assetDefs = taskAssetMap[cat];
+      if (!assetDefs) continue;
+
+      // Find the first task related to this category
+      const relatedTask = allTasks.find((t) => {
+        const relatedFinding = auditRun.findings.find(
+          (f) => f.category === cat && (t.title.includes(f.title) || t.description.includes(f.title))
+        );
+        return !!relatedFinding;
+      }) || allTasks.find((t) => {
+        // Fallback: find any task from a finding in this category
+        return auditRun.findings.some(
+          (f) => f.category === cat && t.description.includes(f.detail?.substring(0, 50) || "")
+        );
+      });
+
+      for (const assetDef of assetDefs) {
+        if (createdAssetTypes.has(assetDef.type)) continue;
+        createdAssetTypes.add(assetDef.type);
+
         await db.asset.create({
           data: {
             repairPlanId: repairPlan.id,
+            taskId: relatedTask?.id || null,
             type: assetDef.type,
             title: `${assetDef.title} for ${biz.name}`,
-            content: `[Asset pending generation] Click "Regenerate" to generate AI-powered ${assetDef.title.toLowerCase()} for ${biz.name}.\n\nThis asset was created based on your ${cat} audit findings. Use the Regenerate button above to fill it with AI-generated content, or write your own content here.`,
+            kpi: assetDef.kpi,
+            content: `[Asset pending generation] Click "Regenerate" to generate AI-powered ${assetDef.title.toLowerCase()} for ${biz.name}.\n\nThis asset was created based on your ${cat} audit findings. Use the Regenerate button above to fill it with AI-generated content, or write your own content here.\n\nKPI Target: ${assetDef.kpi}`,
           },
         });
       }

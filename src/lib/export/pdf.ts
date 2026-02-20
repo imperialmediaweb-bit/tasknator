@@ -47,8 +47,9 @@ interface PdfData {
   overallScore: number;
   scores: { label: string; score: number }[];
   rootCause: string;
-  findings: { category: string; title: string; severity: string; detail: string }[];
+  findings: { category: string; title: string; severity: string; detail: string; url?: string; evidence?: string }[];
   generatedAt?: string;
+  crawlStats?: { pagesCrawled?: number; pagesErrored?: number; durationMs?: number; sitemapFound?: boolean; robotsTxtFound?: boolean };
   branding?: PdfBranding;
 }
 
@@ -164,6 +165,18 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
 
     doc.moveDown(1);
 
+    // ─── SEO Crawl Stats ────────────────────────────────
+    if (data.crawlStats && data.crawlStats.pagesCrawled) {
+      doc.fontSize(14).font("Helvetica-Bold").fillColor(COLORS.primary).text("SEO CRAWL SUMMARY", 50);
+      doc.moveDown(0.3);
+      doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor(COLORS.border).lineWidth(1).stroke();
+      doc.moveDown(0.5);
+      const cs = data.crawlStats;
+      doc.fontSize(10).font("Helvetica").fillColor(COLORS.textDark);
+      doc.text(`Pages Crawled: ${cs.pagesCrawled}    Errors: ${cs.pagesErrored || 0}    Duration: ${((cs.durationMs || 0) / 1000).toFixed(1)}s    Sitemap: ${cs.sitemapFound ? "Found" : "Not Found"}    Robots.txt: ${cs.robotsTxtFound ? "Found" : "Not Found"}`, 50, doc.y, { width: pageWidth });
+      doc.moveDown(1);
+    }
+
     // ─── Root Cause Analysis ─────────────────────────────
     if (data.rootCause) {
       doc.fontSize(14).font("Helvetica-Bold").fillColor(COLORS.primary).text("ROOT CAUSE ANALYSIS", 50);
@@ -221,6 +234,14 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
         doc.fontSize(11).font("Helvetica-Bold").fillColor(COLORS.textDark).text(finding.title, 50);
         doc.moveDown(0.2);
         doc.fontSize(9).font("Helvetica").fillColor(COLORS.textMedium).text(finding.detail, 50, doc.y, { width: pageWidth });
+        if (finding.url) {
+          doc.moveDown(0.2);
+          doc.fontSize(8).font("Helvetica").fillColor(COLORS.primary).text(`URL: ${finding.url}`, 50, doc.y, { width: pageWidth, link: finding.url });
+        }
+        if (finding.evidence) {
+          doc.moveDown(0.2);
+          doc.fontSize(8).font("Helvetica").fillColor(COLORS.textMuted).text(`Evidence: ${finding.evidence}`, 50, doc.y, { width: pageWidth });
+        }
         doc.moveDown(0.8);
         doc.moveTo(50, doc.y).lineTo(50 + pageWidth, doc.y).strokeColor("#f3f4f6").lineWidth(0.5).stroke();
         doc.moveDown(0.5);
