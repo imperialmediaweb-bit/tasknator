@@ -104,6 +104,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       ],
       offer: [
         { type: "OFFER_PACKAGES", title: "Offer & Pricing Packages", kpi: "Conversion rate +15%" },
+        { type: "SALES_SCRIPTS", title: "Sales Scripts & Objection Handling", kpi: "Close rate +20%" },
         { type: "CREATIVE_BRIEF", title: "Ad Campaign Creative Brief", kpi: "ROAS > 3x" },
       ],
       reputation: [
