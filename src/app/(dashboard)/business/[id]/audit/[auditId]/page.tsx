@@ -237,6 +237,9 @@ export default async function AuditReportPage({ params }: { params: { id: string
           }`}>
             Audit {auditRun.status === "RUNNING" ? "in progress..." : auditRun.status === "FAILED" ? "failed" : "queued"}
           </p>
+          {auditRun.status === "FAILED" && auditRun.rootCauseSummary && (
+            <p className="text-sm text-red-600 mt-2 max-w-lg mx-auto">{auditRun.rootCauseSummary}</p>
+          )}
           {auditRun.progress > 0 && (
             <div className="w-48 h-2 bg-blue-100 rounded-full mx-auto mt-3 overflow-hidden">
               <div className="h-full bg-blue-600 rounded-full transition-all" style={{ width: `${auditRun.progress}%` }} />
