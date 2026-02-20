@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, Globe, Users, Target, ArrowRight, ArrowLeft, Upload, CheckCircle2, Sparkles } from "lucide-react";
+import Link from "next/link";
+import {
+  Building2, Globe, Users, Target, ArrowRight, ArrowLeft, Upload,
+  CheckCircle2, Sparkles, Plus, BarChart3, Clock, MapPin, ExternalLink,
+} from "lucide-react";
 
 const INDUSTRIES = [
   "Restaurant / Food Service", "Retail / E-commerce", "Professional Services", "Healthcare / Dental",
@@ -58,8 +62,21 @@ type FormData = {
   websiteText: string;
 };
 
+interface Business {
+  id: string;
+  name: string;
+  industry: string;
+  country: string;
+  city: string | null;
+  websiteUrl: string | null;
+  auditRuns: { id: string; overallScore: number | null; status: string }[];
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [loadingBusinesses, setLoadingBusinesses] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormData>({
@@ -76,6 +93,26 @@ export default function OnboardingPage() {
     { title: "Goals & Pain Points", icon: Target },
     { title: "Website Snapshot", icon: Upload },
   ];
+
+  useEffect(() => {
+    fetchBusinesses();
+  }, []);
+
+  async function fetchBusinesses() {
+    try {
+      const res = await fetch("/api/business");
+      if (res.ok) {
+        const data = await res.json();
+        setBusinesses(data);
+        if (data.length === 0) {
+          setShowForm(true);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoadingBusinesses(false);
+  }
 
   function updateForm(field: keyof FormData, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -98,7 +135,12 @@ export default function OnboardingPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create business");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "Failed to create business");
+        setLoading(false);
+        return;
+      }
       const data = await res.json();
 
       // Auto-start audit after business creation
@@ -119,8 +161,108 @@ export default function OnboardingPage() {
     }
   }
 
+  if (loadingBusinesses) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Show the businesses list when not in form mode
+  if (!showForm && businesses.length > 0) {
+    return (
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Businesses</h1>
+            <p className="text-slate-500 text-sm mt-1">Manage your business profiles and run diagnostics</p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Add Business
+          </button>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+          <div className="divide-y divide-slate-50">
+            {businesses.map((biz) => {
+              const lastAudit = biz.auditRuns?.[0];
+              const score = lastAudit?.overallScore;
+              return (
+                <Link
+                  key={biz.id}
+                  href={`/business/${biz.id}`}
+                  className="flex items-center justify-between p-5 hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+                      {biz.name[0]}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{biz.name}</h3>
+                      <div className="flex items-center gap-3 text-sm text-slate-400 mt-0.5">
+                        <span className="flex items-center gap-1">
+                          <Building2 className="w-3.5 h-3.5" /> {biz.industry}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5" /> {biz.city ? `${biz.city}, ` : ""}{biz.country}
+                        </span>
+                        {biz.websiteUrl && (
+                          <span className="flex items-center gap-1 text-blue-500">
+                            <Globe className="w-3.5 h-3.5" /> Website
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    {score !== null && score !== undefined ? (
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+                        score >= 70 ? "bg-emerald-50 text-emerald-700" :
+                        score >= 40 ? "bg-amber-50 text-amber-700" :
+                        "bg-rose-50 text-rose-700"
+                      }`}>
+                        <BarChart3 className="w-3.5 h-3.5" />
+                        {score}/100
+                      </div>
+                    ) : lastAudit?.status === "RUNNING" || lastAudit?.status === "QUEUED" ? (
+                      <span className="text-xs text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-50 font-medium">
+                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                        Audit running...
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" /> No audit yet
+                      </span>
+                    )}
+                    <ArrowRight className="w-4 h-4 text-slate-300" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show the creation wizard
   return (
     <div className="max-w-3xl mx-auto">
+      {/* Back to businesses list */}
+      {businesses.length > 0 && (
+        <button
+          onClick={() => setShowForm(false)}
+          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-4 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to businesses
+        </button>
+      )}
+
       {/* Progress */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
@@ -385,11 +527,11 @@ export default function OnboardingPage() {
         {/* Navigation */}
         <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
           <button
-            onClick={() => setStep(Math.max(0, step - 1))}
-            disabled={step === 0}
+            onClick={() => step === 0 && businesses.length > 0 ? setShowForm(false) : setStep(Math.max(0, step - 1))}
+            disabled={step === 0 && businesses.length === 0}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {step === 0 && businesses.length > 0 ? "Cancel" : "Back"}
           </button>
 
           {step < steps.length - 1 ? (
