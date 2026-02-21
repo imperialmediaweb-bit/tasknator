@@ -123,31 +123,103 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     const createdAssetTypes = new Set<string>();
 
+    // Deployment task definitions per asset type — each asset gets a "publish/test" task
+    const deployTaskMap: Record<string, { action: string; phase: "DAY_30" | "DAY_60" | "DAY_90"; steps: string }> = {
+      HOOK_SCRIPTS: {
+        action: "Publish & A/B test hook scripts on TikTok/Reels/Shorts",
+        phase: "DAY_30",
+        steps: "1. Select top 3 hooks from generated list\n2. Film each hook (< 3s setup)\n3. Post on TikTok, Instagram Reels, YouTube Shorts\n4. Track hook rate (% viewers who watch past 3s)\n5. Double down on best performer after 48h",
+      },
+      UGC_SCRIPTS: {
+        action: "Film & publish UGC video scripts",
+        phase: "DAY_30",
+        steps: "1. Brief talent/creator with the generated script\n2. Film 30s, 60s, and 90s versions\n3. Edit with captions + b-roll\n4. Post organic + test as paid creative\n5. Measure CTR and conversion rate per version",
+      },
+      SOCIAL_CAPTIONS: {
+        action: "Schedule & publish social media captions",
+        phase: "DAY_30",
+        steps: "1. Review the 20 generated captions\n2. Match each to a visual/photo/video\n3. Schedule using Meta Business Suite or Buffer\n4. Post 5x/week for 4 weeks\n5. Track engagement rate (likes + comments + shares / reach)",
+      },
+      CREATIVE_BRIEF: {
+        action: "Launch ad campaign from creative brief",
+        phase: "DAY_60",
+        steps: "1. Share brief with designer/agency\n2. Produce 3 ad concepts from the brief\n3. Set up Meta & Google campaigns\n4. Launch A/B test with $50-100/day budget\n5. Optimize for ROAS weekly, kill underperformers at day 7",
+      },
+      AD_COPY: {
+        action: "Launch & test ad copy variations",
+        phase: "DAY_30",
+        steps: "1. Set up 3 Meta ad sets with each copy variation\n2. Add 10 target keywords to Google Search campaign\n3. Run for 7 days minimum before judging\n4. Compare CTR across variations\n5. Scale winner, pause losers",
+      },
+      WEBSITE_COPY: {
+        action: "Deploy website copy & CTAs",
+        phase: "DAY_30",
+        steps: "1. Replace hero section with generated copy\n2. Update About, Services, FAQ sections\n3. Add meta title + description to all pages\n4. Set up heatmap tracking (Hotjar/MS Clarity)\n5. Compare bounce rate before/after at day 14",
+      },
+      SEO_PLAN: {
+        action: "Execute SEO content plan",
+        phase: "DAY_60",
+        steps: "1. Publish first 4 blog articles from the plan\n2. Implement internal linking suggestions\n3. Complete on-page SEO checklist items\n4. Submit updated sitemap to Google Search Console\n5. Track organic traffic weekly in GA4",
+      },
+      EMAIL_SEQUENCE: {
+        action: "Set up & activate email sequence",
+        phase: "DAY_30",
+        steps: "1. Import sequence into email tool (Mailchimp/ActiveCampaign)\n2. Set up automation trigger\n3. Test with internal email first\n4. Activate for new leads\n5. Monitor open rate + click rate after 100 sends",
+      },
+      SALES_SCRIPTS: {
+        action: "Train team on sales scripts & test",
+        phase: "DAY_30",
+        steps: "1. Share scripts with sales team/owner\n2. Role-play objection handling scenarios\n3. Use WhatsApp sequence for next 20 leads\n4. Track close rate before/after\n5. Refine scripts based on real objections heard",
+      },
+      OFFER_PACKAGES: {
+        action: "Launch pricing packages & test conversion",
+        phase: "DAY_60",
+        steps: "1. Update pricing page with 3-tier packages\n2. Create comparison table\n3. Add upsell prompts at checkout\n4. Run for 30 days\n5. Compare conversion rate vs old pricing",
+      },
+      REVIEW_REPLIES: {
+        action: "Deploy review reply templates & request reviews",
+        phase: "DAY_30",
+        steps: "1. Reply to all pending Google/Yelp reviews using templates\n2. Set up automated review request after service\n3. Respond to new reviews within 24h\n4. Track review count growth weekly\n5. Goal: 100% response rate + 2 new reviews/week",
+      },
+      WINBACK_MESSAGES: {
+        action: "Launch win-back campaign to inactive clients",
+        phase: "DAY_60",
+        steps: "1. Export list of clients inactive 60+ days\n2. Send email sequence with special offer\n3. Follow up with SMS for non-openers\n4. Track reactivation rate\n5. Goal: recover 10-15% of dormant clients",
+      },
+      COST_CHECKLIST: {
+        action: "Audit costs & implement savings",
+        phase: "DAY_90",
+        steps: "1. Review each of the 15 cost areas\n2. Get quotes for alternatives on top 5 items\n3. Negotiate or switch providers\n4. Track monthly savings\n5. Reinvest savings into marketing budget",
+      },
+    };
+
     for (const cat of categories) {
       const assetDefs = taskAssetMap[cat];
       if (!assetDefs) continue;
-
-      // Find the first task related to this category
-      const relatedTask = allTasks.find((t) => {
-        const relatedFinding = auditRun.findings.find(
-          (f) => f.category === cat && (t.title.includes(f.title) || t.description.includes(f.title))
-        );
-        return !!relatedFinding;
-      }) || allTasks.find((t) => {
-        // Fallback: find any task from a finding in this category
-        return auditRun.findings.some(
-          (f) => f.category === cat && t.description.includes(f.detail?.substring(0, 50) || "")
-        );
-      });
 
       for (const assetDef of assetDefs) {
         if (createdAssetTypes.has(assetDef.type)) continue;
         createdAssetTypes.add(assetDef.type);
 
+        // Create a dedicated "publish/test" task for this asset
+        const deployInfo = deployTaskMap[assetDef.type];
+        const deployPhase = deployInfo?.phase || "DAY_60";
+        const deployTask = await db.planTask.create({
+          data: {
+            repairPlanId: repairPlan.id,
+            phase: deployPhase,
+            title: deployInfo?.action || `Publish & test: ${assetDef.title}`,
+            description: `Deploy the generated "${assetDef.title}" asset and measure results.\n\nKPI Target: ${assetDef.kpi}\n\nSteps:\n${deployInfo?.steps || "1. Review generated content\n2. Customize for your brand\n3. Deploy/publish\n4. Track KPI for 14 days\n5. Iterate based on results"}`,
+            impact: "high",
+            timeEstimate: "2-4 hours",
+            sortOrder: sortOrder++,
+          },
+        });
+
+        // Create the asset linked to its deploy task
         await db.asset.create({
           data: {
             repairPlanId: repairPlan.id,
-            taskId: relatedTask?.id || null,
+            taskId: deployTask.id,
             type: assetDef.type,
             title: `${assetDef.title} for ${biz.name}`,
             kpi: assetDef.kpi,
