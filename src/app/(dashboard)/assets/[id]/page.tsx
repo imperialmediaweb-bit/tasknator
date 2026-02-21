@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles, Target, CheckCircle2 } from "lucide-react";
+import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles, Target, CheckCircle2, Eye, Pencil } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 
 interface Asset {
   id: string;
@@ -24,6 +25,7 @@ export default function AssetEditorPage() {
   const [showVersions, setShowVersions] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState(true);
 
   useEffect(() => {
     fetchAsset();
@@ -187,13 +189,37 @@ export default function AssetEditorPage() {
 
       {/* Editor */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-1 px-4 pt-3 pb-1 border-b border-gray-100">
+          <button
+            onClick={() => setPreviewMode(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${previewMode ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            <Eye className="w-3.5 h-3.5" /> Preview
+          </button>
+          <button
+            onClick={() => setPreviewMode(false)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${!previewMode ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            <Pencil className="w-3.5 h-3.5" /> Edit
+          </button>
+        </div>
         <div className="p-1">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[600px] p-5 text-sm font-mono leading-relaxed border-0 outline-none resize-none rounded-xl"
-            placeholder="Asset content..."
-          />
+          {previewMode ? (
+            <div
+              className="w-full min-h-[600px] p-5 text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-800 prose-li:text-gray-700 cursor-text"
+              onClick={() => setPreviewMode(false)}
+            >
+              <ReactMarkdown>{content || "*No content yet — click Regenerate to generate.*"}</ReactMarkdown>
+            </div>
+          ) : (
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full min-h-[600px] p-5 text-sm font-mono leading-relaxed border-0 outline-none resize-none rounded-xl"
+              placeholder="Asset content..."
+              autoFocus
+            />
+          )}
         </div>
       </div>
 
