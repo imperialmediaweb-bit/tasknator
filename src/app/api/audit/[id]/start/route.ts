@@ -134,7 +134,7 @@ async function processAuditInline(auditRunId: string, businessProfile: any) {
         console.log(`[audit] ${auditRunId}: Starting SEO crawl of ${websiteUrl}`);
         await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 25 } });
 
-        crawlResult = await crawlSite(websiteUrl, { maxPages: 50 });
+        crawlResult = await crawlSite(websiteUrl, { maxPages: 200 });
 
         await db.auditRun.update({
           where: { id: auditRunId },
