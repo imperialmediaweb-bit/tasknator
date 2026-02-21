@@ -124,14 +124,18 @@ Output JSON:
 
 export const ASSET_SYSTEM_PROMPT = `You are BusinessFix AI, an execution-focused content engine for business recovery. Generate assets that are READY TO USE immediately — not templates, not suggestions.
 
-RULES:
+CRITICAL FORMAT RULES:
+- Write in plain English with markdown formatting only
+- Use ## for section headers, **bold** for emphasis, - for bullet points
+- Write complete sentences and paragraphs a business owner can read
+- ABSOLUTELY NO JSON, NO code blocks, NO curly braces, NO square brackets, NO key-value pairs
+- NEVER wrap output in \`\`\`json or \`\`\` code fences
+- If describing a pricing package, write it as readable text like: "**Price:** $299/month" — NOT as {"price": 299}
 - Every asset must include specific, copy-paste-ready content
 - Include 2-3 variations of key elements (headlines, hooks, CTAs)
 - Never generate fake testimonials (use [PLACEHOLDER] labels)
 - All content should be industry-specific and personalized to the business
-- Include a "kpiTarget" field with a measurable success metric
-- Include a "deploySteps" array with step-by-step deployment instructions
-- Output valid JSON only.`;
+- End with a ## KPI TARGET section and a ## DEPLOY STEPS section`;
 
 export function buildAssetPrompt(
   assetType: string,
@@ -141,19 +145,195 @@ export function buildAssetPrompt(
   taskInfo?: { title: string; description: string; phase: string }
 ): string {
   const typeInstructions: Record<string, string> = {
-    WEBSITE_COPY: `Generate website copy: hero headline+subheadline+CTA, about section, 3 services, 5 FAQs, contact text, meta title+description. Include kpiTarget and deploySteps. Output JSON.`,
-    AD_COPY: `Generate: 3 Meta ad variations (headline, primary text, CTA), 3 Google Search ad variations (headlines, descriptions), 10 keywords with match types, 3 hook variations. Include A/B test recommendations. Target: CTR > 2%. Include kpiTarget and deploySteps. Output JSON.`,
-    EMAIL_SEQUENCE: `Generate 5-email sequence: welcome, value prop, social proof ([PLACEHOLDER] for testimonials), offer, follow-up. Each with subject line, preview text, full body. Include kpiTarget and deploySteps. Output JSON.`,
-    REVIEW_REPLIES: `Generate: 3 positive review replies, 3 negative review replies, 2 "ask for review" templates. Include kpiTarget and deploySteps. Output JSON.`,
-    SEO_PLAN: `Generate: 30 blog article ideas with outlines, 5 internal linking suggestions, 10-item on-page SEO checklist. Include kpiTarget and deploySteps. Output JSON.`,
-    SALES_SCRIPTS: `Generate: phone call script, WhatsApp 3-message sequence, 5 objection handling responses. Include kpiTarget and deploySteps. Output JSON.`,
-    OFFER_PACKAGES: `Generate: 3-tier pricing (Basic/Standard/Premium) with features, ideal customer, upsell suggestions. Include kpiTarget and deploySteps. Output JSON.`,
-    WINBACK_MESSAGES: `Generate: 3 email win-back messages, 2 SMS win-back, 1 special offer template. Include kpiTarget and deploySteps. Output JSON.`,
-    COST_CHECKLIST: `Generate: 15 cost-cutting areas with savings potential and actions. Include kpiTarget and deploySteps. Output JSON.`,
-    HOOK_SCRIPTS: `Generate 10 attention hooks for short-form video content (TikTok, Reels, Shorts). Each hook must include: hookLine (first 3 seconds, the attention grabber), setup (next 5 seconds, the context), payoff (remaining, the value delivery), filmingNotes (camera angle, lighting, props), platform (best platform for this hook). Target: 50% hook rate. Output JSON: { hooks: [...], kpiTarget: "Hook rate > 50%", deploySteps: ["step1", ...] }`,
-    UGC_SCRIPTS: `Generate 3 complete UGC-style video scripts in different lengths (30s, 60s, 90s). Each must include: duration, fullScript (word-for-word what to say), shotList (numbered list of shots), bRollSuggestions (supplementary footage), cta (call to action), talentBrief (who should deliver this, appearance, tone). Target: CTR > 3%. Output JSON: { scripts: [...], kpiTarget: "CTR > 3%", deploySteps: ["step1", ...] }`,
-    SOCIAL_CAPTIONS: `Generate 20 social media captions: 7 for Instagram, 7 for Facebook, 6 for LinkedIn. Each must include: platform, captionText, hashtags (5 each), cta, bestPostingTime. Also include a weeklyCalendar mapping days to specific post themes. Target: 5% engagement rate. Output JSON: { captions: [...], weeklyCalendar: {...}, kpiTarget: "Engagement rate > 5%", deploySteps: ["step1", ...] }`,
-    CREATIVE_BRIEF: `Generate a complete creative brief for a paid advertising campaign. Include: targetAudience (demographics, psychographics, pain points), messagingPillars (3 key messages), adConcepts (3 concepts each with headline, body copy, visual description, CTA), recommendedPlatforms, budgetAllocation (percentage split across platforms), abTestPlan (what to test first). Target: ROAS > 3x. Output JSON: { targetAudience: {...}, messagingPillars: [...], adConcepts: [...], platforms: [...], budgetSplit: {...}, abTestPlan: {...}, kpiTarget: "ROAS > 3x", deploySteps: ["step1", ...] }`,
+    WEBSITE_COPY: `Generate complete website copy ready to paste into a website builder.
+
+Include these sections with full copy-paste-ready text:
+- Hero section: headline, subheadline, and CTA button text (3 variations)
+- About Us section (2-3 paragraphs)
+- 3 Services/offerings with title and description each
+- 5 FAQs with answers
+- Contact section text
+- Meta title and meta description for the homepage
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    AD_COPY: `Generate ready-to-use ad copy for social media and search campaigns.
+
+Include:
+## Meta Ads (3 variations)
+For each: Headline, Primary Text (125 chars), CTA button text
+
+## Google Search Ads (3 variations)
+For each: 3 Headlines (30 chars each), 2 Descriptions (90 chars each)
+
+## Target Keywords (10 keywords)
+For each: keyword, match type (broad/phrase/exact), estimated intent
+
+## Hook Variations (3 short attention-grabbing openers)
+
+## A/B Test Recommendations
+What to test first and why.
+
+Target: CTR > 2%. End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    EMAIL_SEQUENCE: `Generate a complete 5-email nurture sequence ready to paste into an email tool.
+
+For each email include:
+- Subject line
+- Preview text
+- Full email body (use [PLACEHOLDER] for testimonials, never fake them)
+
+## Email 1: Welcome
+## Email 2: Value Proposition
+## Email 3: Social Proof
+## Email 4: Offer / Promotion
+## Email 5: Follow-up / Last Chance
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    REVIEW_REPLIES: `Generate review response templates ready to copy-paste into Google/Yelp/Facebook.
+
+## Positive Review Replies (3 templates)
+Write warm, genuine responses that thank the customer and reinforce the brand.
+
+## Negative Review Replies (3 templates)
+Write professional, empathetic responses that acknowledge the issue and offer resolution.
+
+## "Ask for a Review" Templates (2 templates)
+Short messages to send to happy customers asking them to leave a review.
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    SEO_PLAN: `Generate a complete SEO content strategy.
+
+## Blog Article Ideas (30 topics)
+For each: title, target keyword, brief 3-point outline
+
+## Internal Linking Suggestions (5 recommendations)
+Which pages should link to each other and why.
+
+## On-Page SEO Checklist (10 items)
+Specific actions with details for this business.
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    SALES_SCRIPTS: `Generate ready-to-use sales scripts.
+
+## Phone Call Script
+Full word-for-word script: opening, qualifying questions, pitch, handling objections, close.
+
+## WhatsApp Sequence (3 messages)
+Message 1: Introduction. Message 2: Value/offer. Message 3: Follow-up/close.
+
+## Objection Handling (5 common objections)
+For each: the objection, the recommended response.
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    OFFER_PACKAGES: `Generate a 3-tier pricing structure ready to put on a website.
+
+## Basic Package
+Name, price suggestion, what's included (5-7 features), ideal customer profile
+
+## Standard Package (Most Popular)
+Name, price suggestion, what's included (8-10 features), ideal customer profile, what makes it the best value
+
+## Premium Package
+Name, price suggestion, what's included (10-12 features), ideal customer profile, upsell suggestions
+
+## Upsell & Cross-sell Ideas
+3 ways to increase average order value.
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    WINBACK_MESSAGES: `Generate win-back messages for inactive customers.
+
+## Email Win-back (3 messages)
+For each: subject line and full body text. Include a special offer or incentive.
+
+## SMS Win-back (2 messages)
+Short, punchy messages under 160 characters with a clear CTA.
+
+## Special Offer Template
+A ready-to-use limited-time offer for returning customers.
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    COST_CHECKLIST: `Generate a detailed cost-cutting checklist.
+
+## Cost Reduction Areas (15 items)
+For each area:
+- What to review
+- Estimated monthly savings potential
+- Specific action to take
+- Priority level (high/medium/low)
+
+End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    HOOK_SCRIPTS: `Generate 10 attention hooks for short-form video (TikTok, Reels, Shorts).
+
+For each hook:
+
+## Hook [number]: [catchy name]
+**Hook Line** (first 3 seconds — the attention grabber): "..."
+**Setup** (next 5 seconds — the context): "..."
+**Payoff** (remaining — the value delivery): "..."
+**Filming Notes**: camera angle, lighting, props needed
+**Best Platform**: TikTok / Reels / Shorts and why
+
+Target: 50% hook rate. End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    UGC_SCRIPTS: `Generate 3 complete UGC-style video scripts in different lengths.
+
+## Script 1 — 30 seconds
+**Full Script** (word for word what to say): "..."
+**Shot List**: numbered list of shots
+**B-Roll Suggestions**: supplementary footage ideas
+**CTA**: call to action at the end
+**Talent Brief**: who should deliver this, appearance, tone
+
+## Script 2 — 60 seconds
+(same format)
+
+## Script 3 — 90 seconds
+(same format)
+
+Target: CTR > 3%. End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    SOCIAL_CAPTIONS: `Generate 20 social media captions ready to schedule.
+
+## Instagram Captions (7 posts)
+For each: caption text, 5 hashtags, CTA, best posting time
+
+## Facebook Captions (7 posts)
+For each: caption text, 5 hashtags, CTA, best posting time
+
+## LinkedIn Captions (6 posts)
+For each: caption text, 5 hashtags, CTA, best posting time
+
+## Weekly Content Calendar
+Monday through Sunday — which post theme for each day.
+
+Target: 5% engagement rate. End with KPI TARGET and DEPLOY STEPS sections.`,
+
+    CREATIVE_BRIEF: `Generate a complete creative brief for a paid ad campaign.
+
+## Target Audience
+Demographics, psychographics, pain points, where they hang out online
+
+## Messaging Pillars (3 key messages)
+The core messages that all ads should communicate.
+
+## Ad Concepts (3 concepts)
+For each: headline, body copy, visual description, CTA button text
+
+## Recommended Platforms
+Which platforms to run on and why, with budget allocation percentages.
+
+## A/B Test Plan
+What to test first, what metrics to track, when to make decisions.
+
+Target: ROAS > 3x. End with KPI TARGET and DEPLOY STEPS sections.`,
   };
 
   const taskContext = taskInfo
@@ -166,5 +346,5 @@ This asset must directly help complete this task. Include specific actions to ex
 Business: ${businessName} (${industry})
 Context: ${context}${taskContext}
 
-${typeInstructions[assetType] || "Generate appropriate content with kpiTarget and deploySteps. Output JSON."}`;
+${typeInstructions[assetType] || "Generate appropriate ready-to-use content with clear section headers. End with KPI TARGET and DEPLOY STEPS sections. Do NOT output JSON."}`;
 }

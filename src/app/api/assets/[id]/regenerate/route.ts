@@ -8,6 +8,36 @@ import { decrypt } from "@/lib/crypto";
 import { canAccessModule } from "@/lib/billing/plans";
 import { PlanTier } from "@prisma/client";
 
+function jsonToMarkdown(obj: any, depth = 0): string {
+  if (typeof obj === "string") return obj;
+  if (typeof obj === "number" || typeof obj === "boolean") return String(obj);
+  if (Array.isArray(obj)) {
+    return obj
+      .map((item) => {
+        if (typeof item === "string") return `- ${item}`;
+        if (typeof item === "object" && item !== null) return jsonToMarkdown(item, depth);
+        return `- ${String(item)}`;
+      })
+      .join("\n");
+  }
+  if (typeof obj === "object" && obj !== null) {
+    return Object.entries(obj)
+      .map(([key, value]) => {
+        const label = key.replace(/([A-Z])/g, " $1").replace(/[_-]/g, " ").replace(/^\w/, (c) => c.toUpperCase()).trim();
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+          return `**${label}:** ${value}`;
+        }
+        if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
+          return `**${label}:**\n${value.map((v) => `- ${v}`).join("\n")}`;
+        }
+        const heading = depth === 0 ? `## ${label}` : `### ${label}`;
+        return `${heading}\n\n${jsonToMarkdown(value, depth + 1)}`;
+      })
+      .join("\n\n");
+  }
+  return String(obj);
+}
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
@@ -116,10 +146,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       temperature: 0.7,
     });
 
+    // Post-process: strip code fences and convert JSON to readable text if AI ignored instructions
+    let cleanContent = response.trim();
+    // Remove ```json ... ``` or ``` ... ``` wrappers
+    cleanContent = cleanContent.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "");
+    // If the response is still JSON, convert it to readable markdown
+    try {
+      const parsed = JSON.parse(cleanContent);
+      cleanContent = jsonToMarkdown(parsed);
+    } catch {
+      // Not JSON — good, use as-is
+    }
+
     // Update asset with new content
     const updated = await db.asset.update({
       where: { id: params.id },
-      data: { content: response },
+      data: { content: cleanContent },
     });
 
     return NextResponse.json(updated);
