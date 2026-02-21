@@ -27,10 +27,10 @@ function jsonToMarkdown(obj: any, depth = 0): string {
     return obj
       .map((item) => {
         if (typeof item === "string") return `- ${item}`;
-        if (typeof item === "object" && item !== null) return jsonToMarkdown(item, depth);
+        if (typeof item === "object" && item !== null) return jsonToMarkdown(item, depth + 1);
         return `- ${String(item)}`;
       })
-      .join("\n\n");
+      .join("\n\n---\n\n");
   }
   if (typeof obj === "object" && obj !== null) {
     return Object.entries(obj)
@@ -46,7 +46,7 @@ function jsonToMarkdown(obj: any, depth = 0): string {
         if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
           return `**${label}:**\n${value.map((v) => `- ${v}`).join("\n")}`;
         }
-        const heading = depth === 0 ? `## ${label}` : `### ${label}`;
+        const heading = depth === 0 ? `## ${label}` : depth === 1 ? `### ${label}` : `**${label}**`;
         return `${heading}\n\n${jsonToMarkdown(value, depth + 1)}`;
       })
       .join("\n\n");
