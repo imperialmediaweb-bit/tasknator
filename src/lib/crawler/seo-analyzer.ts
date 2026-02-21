@@ -1,6 +1,7 @@
 /**
- * SEO Analyzer — takes CrawlResult and produces structured SEO findings
- * with affected URL + evidence + priority for each issue.
+ * SEO Analyzer — takes CrawlResult and produces structured SEO findings.
+ * EVERY issue produces a per-URL finding with: URL concerned + proof + priority.
+ * This gives clients granular, actionable evidence for each problem.
  */
 
 import { CrawlResult, CrawledPage } from "./seo-crawler";
@@ -15,32 +16,32 @@ export interface SEOIssue {
   evidence: string;
 }
 
-const MAX_FINDINGS = 50;
+const MAX_FINDINGS = 300;
 
-function truncateUrls(urls: string[], max: number = 5): string {
-  if (urls.length <= max) return urls.join(", ");
-  return urls.slice(0, max).join(", ") + ` ... and ${urls.length - max} more`;
+function pathOf(url: string): string {
+  try { return new URL(url).pathname; } catch { return url; }
 }
 
 export function analyzeCrawlResults(crawlResult: CrawlResult, businessUrl: string): SEOIssue[] {
   const issues: SEOIssue[] = [];
   const htmlPages = crawlResult.pages.filter((p) => p.statusCode === 200 && p.wordCount > 0);
 
-  // 1. Missing titles
-  const missingTitles = htmlPages.filter((p) => !p.title);
-  if (missingTitles.length > 0) {
-    issues.push({
-      category: "seo",
-      title: `${missingTitles.length} page${missingTitles.length > 1 ? "s" : ""} missing <title> tag`,
-      detail: `Pages without title tags are invisible in search results. Affected: ${truncateUrls(missingTitles.map((p) => p.url))}`,
-      severity: "CRITICAL",
-      fixable: true,
-      url: missingTitles[0].url,
-      evidence: `No <title> tag found on ${missingTitles.length} page(s)`,
-    });
+  // ── 1. Missing <title> — one finding PER page ──
+  for (const p of htmlPages) {
+    if (!p.title) {
+      issues.push({
+        category: "seo",
+        title: `Missing <title> tag: ${pathOf(p.url)}`,
+        detail: `This page has no <title> tag. Without a title, search engines cannot display it properly in results and CTR drops significantly.`,
+        severity: "CRITICAL",
+        fixable: true,
+        url: p.url,
+        evidence: `HTML source contains no <title> element. Word count on page: ${p.wordCount}.`,
+      });
+    }
   }
 
-  // 2. Duplicate titles
+  // ── 2. Duplicate titles — one finding per duplicate group, listing all URLs ──
   const titleMap = new Map<string, string[]>();
   for (const p of htmlPages) {
     if (p.title) {
@@ -49,34 +50,38 @@ export function analyzeCrawlResults(crawlResult: CrawlResult, businessUrl: strin
       titleMap.set(p.title, existing);
     }
   }
-  const dupTitles = Array.from(titleMap.entries()).filter(([, urls]) => urls.length > 1);
-  for (const [title, urls] of dupTitles.slice(0, 5)) {
-    issues.push({
-      category: "seo",
-      title: `Duplicate title: "${title.substring(0, 60)}${title.length > 60 ? "..." : ""}"`,
-      detail: `${urls.length} pages share the same title tag. Each page should have a unique, descriptive title. Pages: ${truncateUrls(urls)}`,
-      severity: "HIGH",
-      fixable: true,
-      url: urls[0],
-      evidence: `Title "${title}" found on ${urls.length} pages: ${urls.join(", ")}`,
-    });
+  for (const [title, urls] of Array.from(titleMap.entries())) {
+    if (urls.length > 1) {
+      for (const u of urls) {
+        issues.push({
+          category: "seo",
+          title: `Duplicate title on ${pathOf(u)}`,
+          detail: `This page shares its title "${title.substring(0, 80)}" with ${urls.length - 1} other page(s). Each page must have a unique <title> for optimal indexing.`,
+          severity: "HIGH",
+          fixable: true,
+          url: u,
+          evidence: `Title: "${title}". Also found on: ${urls.filter((x: string) => x !== u).join(", ")}`,
+        });
+      }
+    }
   }
 
-  // 3. Missing meta descriptions
-  const missingMeta = htmlPages.filter((p) => !p.metaDescription);
-  if (missingMeta.length > 0) {
-    issues.push({
-      category: "seo",
-      title: `${missingMeta.length} page${missingMeta.length > 1 ? "s" : ""} missing meta description`,
-      detail: `Meta descriptions control your snippet in search results. Without them, Google auto-generates text that may not be compelling. Affected: ${truncateUrls(missingMeta.map((p) => p.url))}`,
-      severity: "HIGH",
-      fixable: true,
-      url: missingMeta[0].url,
-      evidence: `No <meta name="description"> found on ${missingMeta.length} page(s)`,
-    });
+  // ── 3. Missing meta description — per URL ──
+  for (const p of htmlPages) {
+    if (!p.metaDescription) {
+      issues.push({
+        category: "seo",
+        title: `Missing meta description: ${pathOf(p.url)}`,
+        detail: `No <meta name="description"> found. Google will auto-generate a snippet which may not be compelling. Add a 150-160 character description.`,
+        severity: "HIGH",
+        fixable: true,
+        url: p.url,
+        evidence: `HTML source contains no <meta name="description" content="..."> tag.`,
+      });
+    }
   }
 
-  // 4. Duplicate meta descriptions
+  // ── 4. Duplicate meta descriptions — per URL ──
   const metaMap = new Map<string, string[]>();
   for (const p of htmlPages) {
     if (p.metaDescription) {
@@ -85,148 +90,133 @@ export function analyzeCrawlResults(crawlResult: CrawlResult, businessUrl: strin
       metaMap.set(p.metaDescription, existing);
     }
   }
-  const dupMeta = Array.from(metaMap.entries()).filter(([, urls]) => urls.length > 1);
-  for (const [desc, urls] of dupMeta.slice(0, 3)) {
-    issues.push({
-      category: "seo",
-      title: `Duplicate meta description across ${urls.length} pages`,
-      detail: `Same meta description found on multiple pages. Each page needs a unique description for optimal CTR. Pages: ${truncateUrls(urls)}`,
-      severity: "MEDIUM",
-      fixable: true,
-      url: urls[0],
-      evidence: `Meta description "${desc.substring(0, 100)}..." shared by: ${urls.join(", ")}`,
-    });
-  }
-
-  // 5. Missing H1
-  const missingH1 = htmlPages.filter((p) => p.h1s.length === 0);
-  if (missingH1.length > 0) {
-    issues.push({
-      category: "seo",
-      title: `${missingH1.length} page${missingH1.length > 1 ? "s" : ""} missing H1 heading`,
-      detail: `H1 tags are the main heading signal for search engines. Every page should have exactly one H1. Affected: ${truncateUrls(missingH1.map((p) => p.url))}`,
-      severity: "HIGH",
-      fixable: true,
-      url: missingH1[0].url,
-      evidence: `No <h1> tag found on ${missingH1.length} page(s)`,
-    });
-  }
-
-  // 6. Multiple H1s
-  const multiH1 = htmlPages.filter((p) => p.h1s.length > 1);
-  for (const p of multiH1.slice(0, 5)) {
-    issues.push({
-      category: "seo",
-      title: `Multiple H1 tags on ${new URL(p.url).pathname}`,
-      detail: `Found ${p.h1s.length} H1 tags on this page. Best practice is to have exactly one H1 per page. H1s found: "${p.h1s.join('", "')}"`,
-      severity: "MEDIUM",
-      fixable: true,
-      url: p.url,
-      evidence: `Found ${p.h1s.length} H1 tags: ${p.h1s.map((h) => `"${h}"`).join(", ")}`,
-    });
-  }
-
-  // 7. 4xx errors
-  const errors4xx = crawlResult.pages.filter((p) => p.statusCode >= 400 && p.statusCode < 500);
-  if (errors4xx.length > 0) {
-    for (const p of errors4xx.slice(0, 10)) {
-      issues.push({
-        category: "seo",
-        title: `HTTP ${p.statusCode} error: ${new URL(p.url).pathname}`,
-        detail: `This page returns a ${p.statusCode} error. Broken pages hurt user experience and waste crawl budget. Fix the page or set up a proper redirect.`,
-        severity: "CRITICAL",
-        fixable: true,
-        url: p.url,
-        evidence: `HTTP response status: ${p.statusCode}`,
-      });
-    }
-    if (errors4xx.length > 10) {
-      issues.push({
-        category: "seo",
-        title: `${errors4xx.length} total 4xx errors found across site`,
-        detail: `Found ${errors4xx.length} pages with 4xx errors. Most common: ${truncateUrls(errors4xx.map((p) => `${p.url} (${p.statusCode})`))}`,
-        severity: "CRITICAL",
-        fixable: true,
-        url: errors4xx[0].url,
-        evidence: `${errors4xx.length} pages with client errors`,
-      });
+  for (const [desc, urls] of Array.from(metaMap.entries())) {
+    if (urls.length > 1) {
+      for (const u of urls) {
+        issues.push({
+          category: "seo",
+          title: `Duplicate meta description on ${pathOf(u)}`,
+          detail: `This page shares its meta description with ${urls.length - 1} other page(s). Unique descriptions improve CTR in search results.`,
+          severity: "MEDIUM",
+          fixable: true,
+          url: u,
+          evidence: `Meta description: "${desc.substring(0, 120)}...". Also on: ${urls.filter((x: string) => x !== u).join(", ")}`,
+        });
+      }
     }
   }
 
-  // 8. 5xx errors
-  const errors5xx = crawlResult.pages.filter((p) => p.statusCode >= 500);
-  if (errors5xx.length > 0) {
-    for (const p of errors5xx.slice(0, 5)) {
+  // ── 5. Missing H1 — per URL ──
+  for (const p of htmlPages) {
+    if (p.h1s.length === 0) {
       issues.push({
         category: "seo",
-        title: `Server error (${p.statusCode}) on ${new URL(p.url).pathname}`,
-        detail: `This page returns a server error. Server errors indicate infrastructure problems that need immediate attention.`,
-        severity: "CRITICAL",
-        fixable: true,
-        url: p.url,
-        evidence: `HTTP response status: ${p.statusCode}`,
-      });
-    }
-  }
-
-  // 9. Redirects
-  const redirects = crawlResult.pages.filter(
-    (p) => p.statusCode >= 300 && p.statusCode < 400
-  );
-  if (redirects.length > 0) {
-    for (const p of redirects.slice(0, 5)) {
-      issues.push({
-        category: "seo",
-        title: `Redirect (${p.statusCode}) on ${new URL(p.url).pathname}`,
-        detail: `This page redirects to ${p.redirectTarget || "unknown"}. Internal links should point directly to the final URL to avoid redirect chains and preserve link equity.`,
-        severity: "MEDIUM",
-        fixable: true,
-        url: p.url,
-        evidence: `${p.statusCode} redirect → ${p.redirectTarget || "unknown destination"}`,
-      });
-    }
-  }
-
-  // 10. Thin content
-  const utilityPaths = ["/contact", "/login", "/register", "/cart", "/checkout", "/search", "/404", "/privacy", "/terms"];
-  const thinContent = htmlPages.filter((p) => {
-    const path = new URL(p.url).pathname.toLowerCase();
-    return p.wordCount < 300 && !utilityPaths.some((u) => path.includes(u));
-  });
-  if (thinContent.length > 0) {
-    issues.push({
-      category: "seo",
-      title: `${thinContent.length} page${thinContent.length > 1 ? "s" : ""} with thin content (<300 words)`,
-      detail: `Pages with very little content tend to rank poorly. Aim for 500+ words on important pages. Affected: ${truncateUrls(thinContent.map((p) => `${p.url} (${p.wordCount} words)`))}`,
-      severity: "HIGH",
-      fixable: true,
-      url: thinContent[0].url,
-      evidence: `${thinContent.length} pages with fewer than 300 words. Lowest: ${thinContent.sort((a, b) => a.wordCount - b.wordCount).slice(0, 3).map((p) => `${new URL(p.url).pathname} (${p.wordCount} words)`).join(", ")}`,
-    });
-  }
-
-  // 11. Noindex on potentially important pages
-  const noindexPages = htmlPages.filter((p) => p.noindex);
-  const importantNoindex = noindexPages.filter((p) => {
-    const path = new URL(p.url).pathname;
-    return path === "/" || path.split("/").length <= 2;
-  });
-  if (importantNoindex.length > 0) {
-    for (const p of importantNoindex.slice(0, 5)) {
-      issues.push({
-        category: "seo",
-        title: `Noindex found on important page: ${new URL(p.url).pathname}`,
-        detail: `This page has a noindex meta tag, which means it will NOT appear in search results. If this is unintentional, remove the noindex directive immediately.`,
+        title: `Missing H1 heading: ${pathOf(p.url)}`,
+        detail: `This page has no <h1> tag. The H1 is the primary heading signal for search engines and should describe the page content clearly.`,
         severity: "HIGH",
         fixable: true,
         url: p.url,
-        evidence: `<meta name="robots" content="noindex"> detected`,
+        evidence: `No <h1> element found in HTML source. Page title: "${p.title || "(none)"}".`,
       });
     }
   }
 
-  // 12. Canonical issues
-  for (const p of htmlPages.slice(0, 50)) {
+  // ── 6. Multiple H1s — per URL ──
+  for (const p of htmlPages) {
+    if (p.h1s.length > 1) {
+      issues.push({
+        category: "seo",
+        title: `Multiple H1 tags: ${pathOf(p.url)}`,
+        detail: `Found ${p.h1s.length} H1 tags on this page. Best practice is exactly one H1 per page to avoid diluting the heading signal.`,
+        severity: "MEDIUM",
+        fixable: true,
+        url: p.url,
+        evidence: `${p.h1s.length} H1 tags found: ${p.h1s.map((h) => `"${h}"`).join(", ")}`,
+      });
+    }
+  }
+
+  // ── 7. 4xx errors — per URL ──
+  for (const p of crawlResult.pages) {
+    if (p.statusCode >= 400 && p.statusCode < 500) {
+      issues.push({
+        category: "seo",
+        title: `HTTP ${p.statusCode} error: ${pathOf(p.url)}`,
+        detail: `This page returns a ${p.statusCode} error. Broken pages hurt UX and waste crawl budget. Fix the content or set up a 301 redirect.`,
+        severity: "CRITICAL",
+        fixable: true,
+        url: p.url,
+        evidence: `HTTP response status code: ${p.statusCode}. Response time: ${p.responseTimeMs}ms.`,
+      });
+    }
+  }
+
+  // ── 8. 5xx server errors — per URL ──
+  for (const p of crawlResult.pages) {
+    if (p.statusCode >= 500) {
+      issues.push({
+        category: "seo",
+        title: `Server error (${p.statusCode}): ${pathOf(p.url)}`,
+        detail: `This page returns a server error, indicating infrastructure problems. Server errors must be fixed immediately as they affect all visitors.`,
+        severity: "CRITICAL",
+        fixable: true,
+        url: p.url,
+        evidence: `HTTP response status code: ${p.statusCode}. Response time: ${p.responseTimeMs}ms.`,
+      });
+    }
+  }
+
+  // ── 9. Redirects — per URL ──
+  for (const p of crawlResult.pages) {
+    if (p.statusCode >= 300 && p.statusCode < 400) {
+      issues.push({
+        category: "seo",
+        title: `Redirect (${p.statusCode}): ${pathOf(p.url)}`,
+        detail: `This page redirects to ${p.redirectTarget || "unknown"}. Internal links should point to the final URL to avoid redirect chains and preserve link equity.`,
+        severity: "MEDIUM",
+        fixable: true,
+        url: p.url,
+        evidence: `${p.statusCode} redirect → ${p.redirectTarget || "unknown destination"}. Response time: ${p.responseTimeMs}ms.`,
+      });
+    }
+  }
+
+  // ── 10. Thin content — per URL ──
+  const utilityPaths = ["/contact", "/login", "/register", "/cart", "/checkout", "/search", "/404", "/privacy", "/terms"];
+  for (const p of htmlPages) {
+    const path = pathOf(p.url).toLowerCase();
+    if (p.wordCount < 300 && !utilityPaths.some((u) => path.includes(u))) {
+      issues.push({
+        category: "seo",
+        title: `Thin content (${p.wordCount} words): ${pathOf(p.url)}`,
+        detail: `This page has only ${p.wordCount} words. Pages with fewer than 300 words tend to rank poorly. Aim for 500+ words with valuable, original content.`,
+        severity: p.wordCount < 100 ? "HIGH" : "MEDIUM",
+        fixable: true,
+        url: p.url,
+        evidence: `Word count: ${p.wordCount}. Title: "${p.title || "(none)"}". H1: "${p.h1s[0] || "(none)"}".`,
+      });
+    }
+  }
+
+  // ── 11. Noindex on important pages — per URL ──
+  for (const p of htmlPages) {
+    if (p.noindex) {
+      const path = pathOf(p.url);
+      const isImportant = path === "/" || path.split("/").filter(Boolean).length <= 1;
+      issues.push({
+        category: "seo",
+        title: `Noindex directive: ${path}`,
+        detail: `This page has a noindex meta tag — it will NOT appear in search results. ${isImportant ? "This is a top-level page, which makes this especially damaging." : "Verify this is intentional."}`,
+        severity: isImportant ? "CRITICAL" : "HIGH",
+        fixable: true,
+        url: p.url,
+        evidence: `<meta name="robots" content="noindex"> detected on page.`,
+      });
+    }
+  }
+
+  // ── 12. Canonical issues — per URL ──
+  for (const p of htmlPages) {
     if (p.canonical) {
       try {
         const canonicalParsed = new URL(p.canonical, p.url);
@@ -234,12 +224,12 @@ export function analyzeCrawlResults(crawlResult: CrawlResult, businessUrl: strin
         if (canonicalParsed.hostname !== pageParsed.hostname) {
           issues.push({
             category: "seo",
-            title: `Canonical points to different domain: ${new URL(p.url).pathname}`,
-            detail: `The canonical tag on this page points to a different domain (${canonicalParsed.hostname}). This tells search engines to ignore this page in favor of the other domain's version.`,
-            severity: "MEDIUM",
+            title: `Canonical to external domain: ${pathOf(p.url)}`,
+            detail: `The canonical tag points to ${canonicalParsed.hostname}, telling search engines to ignore this page in favor of that domain's version.`,
+            severity: "HIGH",
             fixable: true,
             url: p.url,
-            evidence: `Canonical: ${p.canonical} (different from page domain: ${pageParsed.hostname})`,
+            evidence: `Canonical URL: ${p.canonical}. Page domain: ${pageParsed.hostname}. Canonical domain: ${canonicalParsed.hostname}.`,
           });
         }
       } catch {
@@ -248,63 +238,67 @@ export function analyzeCrawlResults(crawlResult: CrawlResult, businessUrl: strin
     }
   }
 
-  // 13. Missing sitemap.xml
+  // ── 13. Missing sitemap.xml ──
   if (!crawlResult.sitemapFound) {
     issues.push({
       category: "seo",
       title: "No sitemap.xml found",
-      detail: `No sitemap was found at ${businessUrl}/sitemap.xml or in robots.txt. A sitemap helps search engines discover and index all your pages efficiently. Create and submit a sitemap to Google Search Console.`,
+      detail: `No sitemap found at /sitemap.xml, /sitemap_index.xml, or referenced in robots.txt. A sitemap helps search engines discover and index all pages efficiently.`,
       severity: "CRITICAL",
       fixable: true,
       url: businessUrl,
-      evidence: "No sitemap.xml found at /sitemap.xml or /sitemap_index.xml, and no Sitemap directive in robots.txt",
+      evidence: `Checked: ${businessUrl}/sitemap.xml, ${businessUrl}/sitemap_index.xml, and Sitemap directives in robots.txt. None returned valid XML.`,
     });
   }
 
-  // 14. Missing robots.txt
+  // ── 14. Missing robots.txt ──
   if (!crawlResult.stats.robotsTxtFound) {
     issues.push({
       category: "seo",
       title: "No robots.txt found",
-      detail: `No robots.txt was found at ${businessUrl}/robots.txt. While not strictly required, robots.txt helps control how search engines crawl your site and can point to your sitemap.`,
+      detail: `No robots.txt found at /robots.txt. While not required, it helps control crawling and can reference the sitemap.`,
       severity: "HIGH",
       fixable: true,
       url: businessUrl,
-      evidence: "HTTP 404 or error when requesting /robots.txt",
+      evidence: `GET ${businessUrl}/robots.txt returned 404 or error.`,
     });
   }
 
-  // 15. Images without alt text
-  const totalImages = htmlPages.reduce((sum, p) => sum + p.imagesTotal, 0);
-  const missingAlt = htmlPages.reduce((sum, p) => sum + p.imagesMissingAlt, 0);
-  if (totalImages > 0 && missingAlt > 0) {
-    const pct = Math.round((missingAlt / totalImages) * 100);
-    issues.push({
-      category: "seo",
-      title: `${pct}% of images (${missingAlt}/${totalImages}) missing alt text`,
-      detail: `Alt text is essential for accessibility and image SEO. ${missingAlt} out of ${totalImages} images across the site are missing descriptive alt attributes. Add meaningful alt text to all images.`,
-      severity: pct > 50 ? "HIGH" : "MEDIUM",
-      fixable: true,
-      url: htmlPages.find((p) => p.imagesMissingAlt > 0)?.url || businessUrl,
-      evidence: `${missingAlt} images without alt attribute out of ${totalImages} total (${pct}%)`,
-    });
+  // ── 15. Images without alt text — per URL (pages with missing alt) ──
+  for (const p of htmlPages) {
+    if (p.imagesMissingAlt > 0) {
+      const pct = p.imagesTotal > 0 ? Math.round((p.imagesMissingAlt / p.imagesTotal) * 100) : 0;
+      issues.push({
+        category: "seo",
+        title: `${p.imagesMissingAlt} image${p.imagesMissingAlt > 1 ? "s" : ""} missing alt text: ${pathOf(p.url)}`,
+        detail: `${p.imagesMissingAlt} of ${p.imagesTotal} images on this page lack alt attributes. Alt text is critical for accessibility and image SEO.`,
+        severity: pct > 50 ? "HIGH" : "MEDIUM",
+        fixable: true,
+        url: p.url,
+        evidence: `${p.imagesMissingAlt}/${p.imagesTotal} images (${pct}%) missing alt attribute on this page.`,
+      });
+    }
   }
 
-  // 16. Slow pages (> 3 seconds)
-  const slowPages = crawlResult.pages.filter((p) => p.responseTimeMs > 3000 && p.statusCode === 200);
-  if (slowPages.length > 0) {
-    issues.push({
-      category: "seo",
-      title: `${slowPages.length} page${slowPages.length > 1 ? "s" : ""} with slow response time (>3s)`,
-      detail: `Slow pages hurt user experience and search rankings. Google recommends pages load in under 2.5 seconds. Affected: ${truncateUrls(slowPages.map((p) => `${new URL(p.url).pathname} (${(p.responseTimeMs / 1000).toFixed(1)}s)`))}`,
-      severity: "MEDIUM",
-      fixable: true,
-      url: slowPages[0].url,
-      evidence: `${slowPages.length} pages exceeding 3s response time. Slowest: ${(Math.max(...slowPages.map((p) => p.responseTimeMs)) / 1000).toFixed(1)}s`,
-    });
+  // ── 16. Slow pages — per URL ──
+  for (const p of crawlResult.pages) {
+    if (p.responseTimeMs > 3000 && p.statusCode === 200) {
+      issues.push({
+        category: "seo",
+        title: `Slow response (${(p.responseTimeMs / 1000).toFixed(1)}s): ${pathOf(p.url)}`,
+        detail: `This page took ${(p.responseTimeMs / 1000).toFixed(1)} seconds to respond. Google recommends pages load in under 2.5s. Slow pages hurt rankings and user experience.`,
+        severity: p.responseTimeMs > 5000 ? "HIGH" : "MEDIUM",
+        fixable: true,
+        url: p.url,
+        evidence: `Server response time: ${p.responseTimeMs}ms (${(p.responseTimeMs / 1000).toFixed(1)}s). Threshold: 3000ms.`,
+      });
+    }
   }
 
-  // Trim to max findings
+  // Sort by severity priority, then return capped
+  const severityOrder: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, INFO: 4 };
+  issues.sort((a, b) => (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4));
+
   return issues.slice(0, MAX_FINDINGS);
 }
 
@@ -324,7 +318,7 @@ export function buildCrawlSummary(crawlResult: CrawlResult): string {
     ? Math.round(pages.reduce((s, p) => s + p.responseTimeMs, 0) / pages.length)
     : 0;
 
-  return `SEO CRAWL DATA (automated scan of ${stats.pagesCrawled} pages):
+  return `SEO CRAWL DATA (deep scan of ${stats.pagesCrawled} pages, up to 200):
 - Pages with missing title tags: ${missingTitles}
 - Pages with missing meta descriptions: ${missingMeta}
 - Pages with missing H1: ${missingH1}
@@ -335,5 +329,5 @@ export function buildCrawlSummary(crawlResult: CrawlResult): string {
 - Robots.txt: ${stats.robotsTxtFound ? "found" : "NOT FOUND"}
 - Average page response time: ${avgResponseTime}ms
 
-NOTE: Detailed per-page technical SEO issues are documented separately by the crawler. Focus your SEO findings on content strategy, keyword optimization, and higher-level SEO recommendations rather than technical page-level issues.`;
+NOTE: Detailed per-page technical SEO issues (with URL + evidence + priority) are documented separately by the crawler. Focus your SEO findings on content strategy, keyword optimization, and higher-level SEO recommendations rather than repeating technical page-level issues.`;
 }

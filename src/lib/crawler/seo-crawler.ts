@@ -44,11 +44,11 @@ export interface CrawlResult {
 }
 
 const DEFAULT_CONFIG: CrawlConfig = {
-  maxPages: 50,
-  concurrency: 3,
-  delayMs: 500,
+  maxPages: 200,
+  concurrency: 5,
+  delayMs: 300,
   timeoutMs: 8000,
-  totalTimeoutMs: 120000,
+  totalTimeoutMs: 300000, // 5 min for up to 200 pages
 };
 
 const USER_AGENT = "BusinessFix-Audit/1.0 (SEO Crawler)";
