@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles, Target, CheckCircle2, Eye, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { jsonToMarkdown, convertJsonContent } from "@/lib/json-to-markdown";
+import { convertJsonContent } from "@/lib/json-to-markdown";
 
 interface Asset {
   id: string;
