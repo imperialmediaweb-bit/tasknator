@@ -260,7 +260,7 @@ export default function AssetEditorPage() {
         <div className="p-1">
           {previewMode ? (
             <div
-              className="w-full min-h-[600px] p-5 text-sm leading-relaxed prose prose-sm max-w-none prose-headings:text-gray-900 prose-strong:text-gray-800 prose-li:text-gray-700 cursor-text"
+              className="w-full min-h-[600px] p-5 text-sm leading-relaxed prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-h2:text-lg prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-2 prose-h2:mt-6 prose-h3:text-base prose-p:text-gray-700 prose-strong:text-gray-800 prose-li:text-gray-700 prose-li:marker:text-blue-500 prose-hr:border-gray-200 cursor-text"
               onClick={() => setPreviewMode(false)}
             >
               <ReactMarkdown>{content ? formatContentForPreview(content) : "*No content yet — click Regenerate to generate.*"}</ReactMarkdown>
