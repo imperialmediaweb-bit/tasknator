@@ -6,41 +6,8 @@ import { generateWithFallback } from "@/lib/ai/provider";
 import { ASSET_SYSTEM_PROMPT, buildAssetPrompt } from "@/lib/ai/prompts";
 import { decrypt } from "@/lib/crypto";
 import { canAccessModule } from "@/lib/billing/plans";
+import { jsonToMarkdown } from "@/lib/json-to-markdown";
 import { PlanTier } from "@prisma/client";
-
-function jsonToMarkdown(obj: any, depth = 0): string {
-  if (typeof obj === "string") return obj;
-  if (typeof obj === "number" || typeof obj === "boolean") return String(obj);
-  if (Array.isArray(obj)) {
-    return obj
-      .map((item) => {
-        if (typeof item === "string") return `- ${item}`;
-        if (typeof item === "object" && item !== null) return jsonToMarkdown(item, depth + 1);
-        return `- ${String(item)}`;
-      })
-      .join("\n\n---\n\n");
-  }
-  if (typeof obj === "object" && obj !== null) {
-    return Object.entries(obj)
-      .map(([key, value]) => {
-        const label = key
-          .replace(/([A-Z])/g, " $1")
-          .replace(/[_-]/g, " ")
-          .replace(/^\w/, (c) => c.toUpperCase())
-          .trim();
-        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-          return `**${label}:** ${value}`;
-        }
-        if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
-          return `**${label}:**\n${value.map((v) => `- ${v}`).join("\n")}`;
-        }
-        const heading = depth === 0 ? `## ${label}` : depth === 1 ? `### ${label}` : `**${label}**`;
-        return `${heading}\n\n${jsonToMarkdown(value, depth + 1)}`;
-      })
-      .join("\n\n");
-  }
-  return String(obj);
-}
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {

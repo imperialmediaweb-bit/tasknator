@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { FileText, RefreshCw, Save, History, ChevronDown, Sparkles, Target, CheckCircle2, Eye, Pencil } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { jsonToMarkdown, convertJsonContent } from "@/lib/json-to-markdown";
 
 interface Asset {
   id: string;
@@ -14,60 +15,6 @@ interface Asset {
   task: { id: string; title: string; phase: string } | null;
   versions: { id: string; version: number; content: string; createdAt: string }[];
   updatedAt: string;
-}
-
-/**
- * Convert JSON objects/arrays to readable markdown.
- * Handles content that was saved as raw JSON from AI responses.
- */
-function jsonToMarkdown(obj: any, depth = 0): string {
-  if (typeof obj === "string") return obj;
-  if (typeof obj === "number" || typeof obj === "boolean") return String(obj);
-  if (Array.isArray(obj)) {
-    return obj
-      .map((item) => {
-        if (typeof item === "string") return `- ${item}`;
-        if (typeof item === "object" && item !== null) return jsonToMarkdown(item, depth + 1);
-        return `- ${String(item)}`;
-      })
-      .join("\n\n---\n\n");
-  }
-  if (typeof obj === "object" && obj !== null) {
-    return Object.entries(obj)
-      .map(([key, value]) => {
-        const label = key
-          .replace(/([A-Z])/g, " $1")
-          .replace(/[_-]/g, " ")
-          .replace(/^\w/, (c) => c.toUpperCase())
-          .trim();
-        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-          return `**${label}:** ${value}`;
-        }
-        if (Array.isArray(value) && value.every((v) => typeof v === "string")) {
-          return `**${label}:**\n${value.map((v) => `- ${v}`).join("\n")}`;
-        }
-        const heading = depth === 0 ? `## ${label}` : depth === 1 ? `### ${label}` : `**${label}**`;
-        return `${heading}\n\n${jsonToMarkdown(value, depth + 1)}`;
-      })
-      .join("\n\n");
-  }
-  return String(obj);
-}
-
-/**
- * If content looks like raw JSON, convert it to readable markdown.
- */
-function formatContentForPreview(raw: string): string {
-  const trimmed = raw.trim();
-  if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      return jsonToMarkdown(parsed);
-    } catch {
-      // Not valid JSON — return as-is
-    }
-  }
-  return raw;
 }
 
 export default function AssetEditorPage() {
@@ -263,7 +210,7 @@ export default function AssetEditorPage() {
               className="w-full min-h-[600px] p-5 text-sm leading-relaxed prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-h2:text-lg prose-h2:border-b prose-h2:border-gray-100 prose-h2:pb-2 prose-h2:mt-6 prose-h3:text-base prose-p:text-gray-700 prose-strong:text-gray-800 prose-li:text-gray-700 prose-li:marker:text-blue-500 prose-hr:border-gray-200 cursor-text"
               onClick={() => setPreviewMode(false)}
             >
-              <ReactMarkdown>{content ? formatContentForPreview(content) : "*No content yet — click Regenerate to generate.*"}</ReactMarkdown>
+              <ReactMarkdown>{content ? (convertJsonContent(content) || content) : "*No content yet — click Regenerate to generate.*"}</ReactMarkdown>
             </div>
           ) : (
             <textarea
