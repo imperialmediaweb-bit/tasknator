@@ -1,0 +1,135 @@
+import { db } from "./db";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+/**
+ * Checks if the database schema exists. If not, executes prisma/init.sql
+ * to create all tables, enums, indexes, and foreign keys.
+ *
+ * For existing databases, applies any pending column migrations.
+ *
+ * This avoids any dependency on the prisma CLI at runtime.
+ */
+export async function ensureSchema(): Promise<boolean> {
+  let isNew = false;
+
+  try {
+    // Quick check: does the User table exist?
+    await db.$queryRaw`SELECT 1 FROM "User" LIMIT 0`;
+  } catch {
+    // Table doesn't exist — apply init.sql
+    isNew = true;
+  }
+
+  if (isNew) {
+    try {
+      const sqlPath = join(process.cwd(), "prisma", "init.sql");
+      const sql = readFileSync(sqlPath, "utf-8");
+
+      // Split into individual statements (separated by semicolons)
+      // Strip SQL comments before checking if a segment has real content
+      const statements = sql
+        .split(";")
+        .map((s) => s.trim())
+        .filter((s) => {
+          const withoutComments = s.replace(/--[^\n]*/g, "").trim();
+          return withoutComments.length > 0;
+        });
+
+      for (const stmt of statements) {
+        try {
+          await db.$executeRawUnsafe(stmt);
+        } catch (e: unknown) {
+          // Skip "already exists" errors (safe to ignore on partial re-runs)
+          const message = e instanceof Error ? e.message : "Unknown error";
+          const code = e != null && typeof e === "object" && "code" in e ? (e as { code: string }).code : undefined;
+          if (
+            message.includes("already exists") ||
+            code === "42710" || // duplicate_object (enum)
+            code === "42P07"    // duplicate_table
+          ) {
+            continue;
+          }
+          throw e;
+        }
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Existing database — apply pending column migrations
+  await applyMigrations();
+  return true;
+}
+
+/**
+ * Adds missing columns to existing tables.
+ * Each migration is idempotent — safe to run multiple times.
+ */
+async function applyMigrations() {
+  const migrations: { name: string; sql: string }[] = [
+    {
+      name: "workspace_white_label_fields",
+      sql: `
+        ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "customBrandName" TEXT;
+        ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "customDomain" TEXT;
+        ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "whiteLabelEnabled" BOOLEAN NOT NULL DEFAULT false;
+        ALTER TABLE "Workspace" ADD COLUMN IF NOT EXISTS "logoUrl" TEXT;
+      `,
+    },
+    {
+      name: "audit_finding_url_evidence",
+      sql: `
+        ALTER TABLE "AuditFinding" ADD COLUMN IF NOT EXISTS "url" TEXT;
+        ALTER TABLE "AuditFinding" ADD COLUMN IF NOT EXISTS "evidence" TEXT;
+      `,
+    },
+    {
+      name: "audit_run_crawl_stats",
+      sql: `
+        ALTER TABLE "AuditRun" ADD COLUMN IF NOT EXISTS "crawlStats" JSONB;
+      `,
+    },
+    {
+      name: "asset_task_link_and_kpi",
+      sql: `
+        ALTER TABLE "Asset" ADD COLUMN IF NOT EXISTS "taskId" TEXT;
+        ALTER TABLE "Asset" ADD COLUMN IF NOT EXISTS "kpi" TEXT;
+      `,
+    },
+  ];
+
+  // Enum value migrations need separate handling (cannot be in transactions)
+  const enumMigrations = [
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'HOOK_SCRIPTS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'UGC_SCRIPTS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'SOCIAL_CAPTIONS'`,
+    `ALTER TYPE "AssetType" ADD VALUE IF NOT EXISTS 'CREATIVE_BRIEF'`,
+  ];
+
+  for (const stmt of enumMigrations) {
+    try {
+      await db.$executeRawUnsafe(stmt);
+    } catch {
+      // Ignore — enum value likely already exists
+    }
+  }
+
+  for (const m of migrations) {
+    try {
+      const statements = m.sql
+        .split(";")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      for (const stmt of statements) {
+        await db.$executeRawUnsafe(stmt);
+      }
+    } catch {
+      // IF NOT EXISTS handles duplicates — ignore errors gracefully
+    }
+  }
+}

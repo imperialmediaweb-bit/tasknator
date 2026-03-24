@@ -1,0 +1,475 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum PrimaryGoal {
+  MORE_LEADS
+  MORE_CONVERSIONS
+  IMPROVE_REVIEWS
+  REDUCE_COSTS
+}
+
+enum MainPain {
+  NO_CALLS
+  LOW_CONVERSIONS
+  BAD_REVIEWS
+  ADS_NOT_WORKING
+  EXPENSIVE_OPERATIONS
+}
+
+enum AuditStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum PlanPhase {
+  DAY_30
+  DAY_60
+  DAY_90
+}
+
+enum AssetType {
+  WEBSITE_COPY
+  AD_COPY
+  EMAIL_SEQUENCE
+  SMS_SEQUENCE
+  REVIEW_REPLIES
+  SEO_PLAN
+  SALES_SCRIPTS
+  OFFER_PACKAGES
+  FAQ
+  WINBACK_MESSAGES
+  COST_CHECKLIST
+  HOOK_SCRIPTS
+  UGC_SCRIPTS
+  SOCIAL_CAPTIONS
+  CREATIVE_BRIEF
+}
+
+enum AIProvider {
+  ANTHROPIC
+  OPENAI
+  GEMINI
+}
+
+enum PlanTier {
+  STARTER
+  PRO
+  AGENCY
+}
+
+// ─── Auth Models ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  locale        String    @default("en")
+  isAdmin       Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships Membership[]
+  auditLogs   AuditLog[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Workspace & Team ────────────────────────────────────
+
+model Workspace {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  plan             PlanTier @default(STARTER)
+  logoUrl          String?
+  customBrandName  String?
+  customDomain     String?
+  whiteLabelEnabled Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  memberships      Membership[]
+  businessProfiles BusinessProfile[]
+  providerKeys     ProviderKey[]
+  subscription     Subscription?
+  usageMeters      UsageMeter[]
+  invoices         Invoice[]
+  auditLogs        AuditLog[]
+}
+
+model Membership {
+  id          String     @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        MemberRole @default(MEMBER)
+  createdAt   DateTime   @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+// ─── Business & Audit ────────────────────────────────────
+
+model BusinessProfile {
+  id                String       @id @default(cuid())
+  workspaceId       String
+  name              String
+  industry          String
+  country           String
+  city              String?
+  websiteUrl        String?
+  description       String?
+  facebookUrl       String?
+  instagramUrl      String?
+  tiktokUrl         String?
+  linkedinUrl       String?
+  googleBusinessUrl String?
+  revenueRange      String?
+  customersMonth    Int?
+  avgOrderValue     Float?
+  marketingBudget   Float?
+  teamSize          Int?
+  primaryGoal       PrimaryGoal?
+  mainPain          MainPain?
+  websiteText       String?      @db.Text
+  screenshotUrl     String?
+  uploadedFileUrls  String[]     @default([])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  auditRuns   AuditRun[]
+  repairPlans RepairPlan[]
+}
+
+model AuditRun {
+  id                String      @id @default(cuid())
+  businessProfileId String
+  status            AuditStatus @default(QUEUED)
+  overallScore      Int?
+  websiteScore      Int?
+  seoScore          Int?
+  socialScore       Int?
+  offerScore        Int?
+  reputationScore   Int?
+  localScore        Int?
+  rootCauseSummary  String?     @db.Text
+  rawResponse       String?     @db.Text
+  crawlStats        Json?
+  progress          Int         @default(0)
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  createdAt         DateTime    @default(now())
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  findings        AuditFinding[]
+}
+
+model AuditFinding {
+  id         String          @id @default(cuid())
+  auditRunId String
+  category   String
+  title      String
+  detail     String          @db.Text
+  severity   FindingSeverity
+  fixable    Boolean         @default(true)
+  fixed      Boolean         @default(false)
+  url        String?
+  evidence   String?         @db.Text
+  createdAt  DateTime        @default(now())
+
+  auditRun AuditRun @relation(fields: [auditRunId], references: [id], onDelete: Cascade)
+}
+
+// ─── Recovery Plan ───────────────────────────────────────
+
+model RepairPlan {
+  id                String   @id @default(cuid())
+  businessProfileId String
+  title             String
+  summary           String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  businessProfile BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  tasks           PlanTask[]
+  assets          Asset[]
+}
+
+model PlanTask {
+  id           String    @id @default(cuid())
+  repairPlanId String
+  phase        PlanPhase
+  title        String
+  description  String    @db.Text
+  impact       String?
+  timeEstimate String?
+  completed    Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  repairPlan RepairPlan @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+  assets     Asset[]
+}
+
+model Asset {
+  id           String    @id @default(cuid())
+  repairPlanId String
+  taskId       String?
+  type         AssetType
+  title        String
+  content      String    @db.Text
+  metadata     Json?
+  kpi          String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  repairPlan RepairPlan     @relation(fields: [repairPlanId], references: [id], onDelete: Cascade)
+  task       PlanTask?      @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  versions   AssetVersion[]
+}
+
+model AssetVersion {
+  id        String   @id @default(cuid())
+  assetId   String
+  content   String   @db.Text
+  version   Int
+  createdBy String?
+  createdAt DateTime @default(now())
+
+  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+}
+
+// ─── AI Provider Keys ────────────────────────────────────
+
+model ProviderKey {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  provider     AIProvider
+  encryptedKey String
+  nonce        String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, provider])
+}
+
+// ─── Billing ─────────────────────────────────────────────
+
+model Subscription {
+  id                String   @id @default(cuid())
+  workspaceId       String   @unique
+  stripeCustomerId  String?
+  stripeSubId       String?  @unique
+  paypalSubId       String?  @unique
+  planTier          PlanTier
+  status            String   @default("active")
+  currentPeriodEnd  DateTime?
+  cancelAtPeriodEnd Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model UsageMeter {
+  id          String   @id @default(cuid())
+  workspaceId String
+  month       String
+  auditsUsed  Int      @default(0)
+  tokensUsed  Int      @default(0)
+  exportsUsed Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, month])
+}
+
+model Invoice {
+  id          String    @id @default(cuid())
+  workspaceId String
+  stripeInvId String?
+  amount      Int
+  currency    String    @default("usd")
+  status      String
+  pdfUrl      String?
+  hostedUrl   String?
+  periodStart DateTime?
+  periodEnd   DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+// ─── Platform Config ─────────────────────────────────────
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─── Exports & Jobs ──────────────────────────────────────
+
+model ExportFile {
+  id        String   @id @default(cuid())
+  type      String
+  filename  String
+  url       String
+  size      Int?
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  workspaceId String?
+  action      String
+  target      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+}
+
+// ─── Content ─────────────────────────────────────────────
+
+model BlogPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  excerpt     String
+  content     String    @db.Text
+  coverImage  String?
+  authorName  String
+  authorImage String?
+  category    String
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model JobRecord {
+  id         String    @id @default(cuid())
+  type       String
+  refId      String
+  status     String    @default("pending")
+  progress   Int       @default(0)
+  error      String?   @db.Text
+  startedAt  DateTime?
+  finishedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+// ─── CMS: Menus, Pages ──────────────────────────────────
+
+enum MenuLocation {
+  HEADER
+  FOOTER
+}
+
+model MenuItem {
+  id        String       @id @default(cuid())
+  location  MenuLocation
+  label     String
+  href      String
+  sortOrder Int          @default(0)
+  visible   Boolean      @default(true)
+  openNew   Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model CustomPage {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String   @db.Text
+  metaTitle   String?
+  metaDesc    String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
