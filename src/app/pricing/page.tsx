@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Check, Zap, Crown, Building2 } from "lucide-react";
+import { db } from "@/lib/db";
+import { getSiteBranding } from "@/lib/branding";
 
 const plans = [
   {
@@ -54,7 +56,11 @@ const plans = [
   },
 ];
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const [branding, footerItems] = await Promise.all([
+    getSiteBranding(),
+    db.menuItem.findMany({ where: { location: "FOOTER", visible: true }, orderBy: { sortOrder: "asc" } }),
+  ]);
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Header */}
@@ -173,13 +179,21 @@ export default function PricingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 py-8 text-center text-sm text-slate-400">
+      <footer className="border-t border-gray-100 py-10 mt-12">
         <div className="max-w-7xl mx-auto px-6">
-          <Link href="/" className="text-slate-500 hover:text-slate-700 font-medium">BusinessFix AI</Link>
-          <span className="mx-2">·</span>
-          <Link href="/login" className="hover:text-slate-600">Sign in</Link>
-          <span className="mx-2">·</span>
-          <Link href="/register" className="hover:text-slate-600">Register</Link>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
+              <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              {footerItems.map(item => (
+                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="hover:text-gray-900 transition-colors">
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     </div>

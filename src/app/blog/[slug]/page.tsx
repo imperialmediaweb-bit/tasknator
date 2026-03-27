@@ -15,9 +15,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const [post, branding] = await Promise.all([
+  const [post, branding, footerItems] = await Promise.all([
     db.blogPost.findUnique({ where: { slug: params.slug, published: true } }),
     getSiteBranding(),
+    db.menuItem.findMany({ where: { location: "FOOTER", visible: true }, orderBy: { sortOrder: "asc" } }),
   ]);
 
   if (!post) notFound();
@@ -117,15 +118,15 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-bold text-gray-900">Recovra.ai</span>
+              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
+              <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link href="/blog" className="hover:text-gray-900 transition-colors">Blog</Link>
-              <a href="#" className="hover:text-gray-900 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-gray-900 transition-colors">Terms</a>
+              {footerItems.map(item => (
+                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="hover:text-gray-900 transition-colors">
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

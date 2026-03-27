@@ -20,7 +20,7 @@ export const PLAN_CONFIGS: PlanConfig[] = [
   {
     tier: "STARTER",
     name: "Starter",
-    price: 9,
+    price: 19,
     description: "Perfect for solo businesses getting started with AI diagnostics",
     features: [
       "1 business profile",
@@ -36,7 +36,7 @@ export const PLAN_CONFIGS: PlanConfig[] = [
   {
     tier: "PRO",
     name: "Pro",
-    price: 29,
+    price: 79,
     description: "For growing businesses that need the full diagnostic toolkit",
     features: [
       "3 business profiles",
@@ -53,7 +53,7 @@ export const PLAN_CONFIGS: PlanConfig[] = [
   {
     tier: "AGENCY",
     name: "Agency",
-    price: 79,
+    price: 149,
     description: "For agencies managing multiple client businesses",
     features: [
       "25 business profiles",

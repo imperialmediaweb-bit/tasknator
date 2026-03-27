@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Globe, Sparkles, ChevronRight, Play, ChevronDown, Mail } from "lucide-react";
 import { getSiteBranding } from "@/lib/branding";
+import { db } from "@/lib/db";
 
 const FEATURES = [
   {
@@ -160,7 +161,10 @@ function IconComponent({ name, className }: { name: string; className?: string }
 }
 
 export default async function HomePage() {
-  const branding = await getSiteBranding();
+  const [branding, footerItems] = await Promise.all([
+    getSiteBranding(),
+    db.menuItem.findMany({ where: { location: "FOOTER", visible: true }, orderBy: { sortOrder: "asc" } }),
+  ]);
 
   return (
     <div className="relative overflow-hidden">
@@ -570,7 +574,7 @@ export default async function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-gray-100">
+      <footer className="py-4 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
@@ -587,10 +591,11 @@ export default async function HomePage() {
               <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              <Link href="/blog" className="hover:text-gray-900 transition-colors">Blog</Link>
-              <a href="#" className="hover:text-gray-900 transition-colors">Privacy</a>
-              <a href="#" className="hover:text-gray-900 transition-colors">Terms</a>
-              <a href="#" className="hover:text-gray-900 transition-colors">Contact</a>
+              {footerItems.map(item => (
+                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="hover:text-gray-900 transition-colors">
+                  {item.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

@@ -39,7 +39,7 @@ export function getStripe() {
 export const PLANS = {
   STARTER: {
     name: "Starter",
-    price: 900, // $9
+    price: 1900, // $19
     stripePriceId: process.env.STRIPE_PRICE_STARTER!,
     businesses: 1,
     auditsPerMonth: 1,
@@ -49,7 +49,7 @@ export const PLANS = {
   },
   PRO: {
     name: "Pro",
-    price: 2900, // $29
+    price: 7900, // $79
     stripePriceId: process.env.STRIPE_PRICE_PRO!,
     businesses: 3,
     auditsPerMonth: 10,
@@ -59,7 +59,7 @@ export const PLANS = {
   },
   AGENCY: {
     name: "Agency",
-    price: 7900, // $79
+    price: 14900, // $149
     stripePriceId: process.env.STRIPE_PRICE_AGENCY!,
     businesses: 25,
     auditsPerMonth: 100,

@@ -68,15 +68,20 @@ export default async function CustomPageView({ params }: { params: { slug: strin
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-100 py-8 mt-12">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-          <span className="text-sm text-gray-400">Recovra.ai</span>
-          <div className="flex items-center gap-4">
-            {footerItems.map(item => (
-              <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="text-sm text-gray-400 hover:text-gray-600">
-                {item.label}
-              </Link>
-            ))}
+      <footer className="border-t border-gray-100 py-10 mt-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
+              <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              {footerItems.map(item => (
+                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="hover:text-gray-900 transition-colors">
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </footer>
