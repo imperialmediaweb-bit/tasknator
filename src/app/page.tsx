@@ -39,7 +39,7 @@ const FEATURES = [
 const PLANS = [
   {
     name: "Starter",
-    price: "$9",
+    price: "$19",
     period: "/month",
     description: "For solo businesses",
     features: ["1 business profile", "1 audit/month", "Website Fixer", "Sales Doctor", "Limited exports"],
@@ -48,7 +48,7 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "$29",
+    price: "$79",
     period: "/month",
     description: "For growing businesses",
     features: ["3 business profiles", "10 audits/month", "All modules", "Full PDF & ZIP exports", "Version history", "Priority support"],
@@ -57,7 +57,7 @@ const PLANS = [
   },
   {
     name: "Agency",
-    price: "$79",
+    price: "$149",
     period: "/month",
     description: "For agencies & teams",
     features: ["25 business profiles", "100 audits/month", "All modules + Cost Cutter", "White-label exports", "Team members (25)", "Dedicated support"],
@@ -90,7 +90,7 @@ const TESTIMONIALS = [
   {
     name: "Marcus Johnson",
     role: "CEO, TechFix Pro",
-    quote: "We were spending $3K/month on a marketing agency that couldn't tell us what was actually wrong. Recovra.ai diagnosed everything in 3 minutes for $29/month.",
+    quote: "We were spending $3K/month on a marketing agency that couldn't tell us what was actually wrong. Recovra.ai diagnosed everything in 3 minutes for $79/month.",
     rating: 5,
   },
   {
@@ -142,7 +142,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I use Recovra.ai for my clients?",
-    a: "Absolutely! Our Agency plan ($79/month) supports up to 25 business profiles and 100 audits/month with white-label exports and team access. Many marketing agencies use Recovra.ai to onboard and diagnose clients.",
+    a: "Absolutely! Our Agency plan ($149/month) supports up to 25 business profiles and 100 audits/month with white-label exports and team access. Many marketing agencies use Recovra.ai to onboard and diagnose clients.",
   },
   {
     q: "What assets does Recovra.ai generate?",
