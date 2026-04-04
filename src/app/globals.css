@@ -8,6 +8,11 @@
   :root {
     --background: #ffffff;
     --foreground: #0f172a;
+    /* Landing reference tones */
+    --landing-navy: #1c3d6e;
+    --landing-check-blue: #2f80ed;
+    --landing-pricing-btn: #1c57a3;
+    --landing-pricing-btn-hover: #164877;
   }
 
   body {
@@ -56,6 +61,156 @@
       linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
       linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
     background-size: 60px 60px;
+  }
+
+  /* Landing hero: deeper top → airy light bottom + wisps (reference) */
+  .landing-hero-bg {
+    background: linear-gradient(
+      165deg,
+      #0e2a5c 0%,
+      #153e8b 22%,
+      #1d4ed8 48%,
+      #38bdf8 82%,
+      #bae6fd 100%
+    );
+    position: relative;
+    overflow: hidden;
+  }
+
+  .landing-hero-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse 85% 55% at 90% 8%, rgba(147, 197, 253, 0.35), transparent 55%),
+      radial-gradient(ellipse 70% 60% at 12% 92%, rgba(59, 130, 246, 0.22), transparent 50%),
+      radial-gradient(ellipse 55% 45% at 95% 88%, rgba(255, 255, 255, 0.22), transparent 58%);
+    pointer-events: none;
+  }
+
+  .landing-hero-waves {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.35;
+  }
+
+  .landing-hero-waves svg {
+    position: absolute;
+    width: 200%;
+    min-width: 1200px;
+    height: auto;
+    left: -50%;
+  }
+
+  .landing-hero-waves .wave-1 {
+    bottom: 12%;
+    animation: landing-wave-shift 20s ease-in-out infinite;
+  }
+
+  .landing-hero-waves .wave-2 {
+    bottom: 18%;
+    opacity: 0.45;
+    animation: landing-wave-shift 26s ease-in-out infinite reverse;
+  }
+
+  @keyframes landing-wave-shift {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(3%);
+    }
+  }
+
+  .landing-hero-base-waves {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    pointer-events: none;
+    height: clamp(7.5rem, 20vw, 14rem);
+    overflow: hidden;
+  }
+
+  .landing-hero-base-waves svg {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 130%;
+    min-width: 64rem;
+    max-width: none;
+  }
+
+  .landing-hero-base-waves .hero-wave-layer-a {
+    bottom: -0.5rem;
+    opacity: 0.85;
+    color: rgba(15, 35, 95, 0.45);
+  }
+
+  .landing-hero-base-waves .hero-wave-layer-b {
+    bottom: -0.25rem;
+    opacity: 0.9;
+    color: rgba(59, 130, 246, 0.38);
+  }
+
+  .landing-hero-base-waves .hero-wave-layer-c {
+    bottom: 0;
+    opacity: 0.95;
+    color: rgba(191, 219, 254, 0.75);
+  }
+
+  .landing-hero-base-waves .hero-wave-layer-d {
+    bottom: 0.35rem;
+    opacity: 1;
+    color: rgba(241, 245, 249, 0.97);
+  }
+
+  .pricing-card-shadow {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .pricing-header-gradient {
+    background: linear-gradient(to bottom, #003399, #0066cc);
+  }
+
+  .hero-dashboard-stage {
+    perspective: 1600px;
+    perspective-origin: 56% 40%;
+  }
+
+  .hero-device-bezel {
+    background: linear-gradient(
+      148deg,
+      #353d52 0%,
+      #222836 30%,
+      #12151f 70%,
+      #0a0c12 100%
+    );
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 42px 88px -24px rgba(0, 0, 0, 0.72);
+    transform: translateZ(0);
+  }
+
+  .hero-dashboard-tilt {
+    transform-style: preserve-3d;
+    transform: rotateX(3deg) rotateY(-9deg) rotateZ(2deg) scale(1.03);
+    transform-origin: 86% 52%;
+  }
+
+  @media (max-width: 1023px) {
+    .hero-dashboard-stage {
+      perspective: 1200px;
+      perspective-origin: 50% 42%;
+    }
+
+    .hero-dashboard-tilt {
+      transform: rotateX(2deg) rotateY(-6deg) rotateZ(1deg) scale(1.01);
+      transform-origin: 75% 50%;
+    }
   }
 }
 

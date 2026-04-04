@@ -1,163 +1,56 @@
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Globe, Sparkles, ChevronRight, Play, ChevronDown, Mail } from "lucide-react";
+import Image from "next/image";
+import {
+  ChevronDown,
+  ChevronRight,
+  Lock,
+  CreditCard,
+  Check,
+  AlertTriangle,
+  HelpCircle,
+  Diamond,
+} from "lucide-react";
 import { getSiteBranding } from "@/lib/branding";
 import { db } from "@/lib/db";
 
-const FEATURES = [
-  {
-    icon: "Target",
-    title: "AI Business Audit",
-    description: "Deep diagnostic scan of your website, SEO, social presence, offers, and reputation. Get a clear scorecard.",
-  },
-  {
-    icon: "FileText",
-    title: "30/60/90 Day Repair Plan",
-    description: "Actionable recovery roadmap prioritized by impact. Know exactly what to fix first.",
-  },
-  {
-    icon: "Sparkles",
-    title: "Ready-to-Use Assets",
-    description: "Landing copy, ad scripts, email sequences, review replies — generated and editable instantly.",
-  },
-  {
-    icon: "BarChart3",
-    title: "Sales Doctor",
-    description: "Redesign your offers with Basic/Standard/Premium packages and proven sales scripts.",
-  },
-  {
-    icon: "Star",
-    title: "Reputation Fixer",
-    description: "Analyze reviews, generate professional replies, and create review-request campaigns.",
-  },
-  {
-    icon: "TrendingUp",
-    title: "Ads & SEO Repair",
-    description: "Meta ads, Google ads, keyword lists, 30 article ideas — all tailored to your business.",
-  },
-];
+function NavDropdown({
+  label,
+  children,
+  light,
+}: {
+  label: string;
+  children: ReactNode;
+  light?: boolean;
+}) {
+  return (
+    <div className="relative group py-2">
+      <button
+        type="button"
+        className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${
+          light ? "text-white/90 hover:text-white" : "text-slate-700 hover:text-slate-900"
+        }`}
+        aria-expanded="false"
+        aria-haspopup="true"
+      >
+        {label}
+        <ChevronDown className="h-4 w-4 opacity-80" strokeWidth={2} />
+      </button>
+      <div className="invisible absolute left-0 top-full z-50 pt-1 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100">
+        <div className="min-w-[11rem] rounded-lg border border-slate-100 bg-white py-1 shadow-lg shadow-slate-900/10">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-const PLANS = [
-  {
-    name: "Starter",
-    price: "$19",
-    period: "/month",
-    description: "For solo businesses",
-    features: ["1 business profile", "1 audit/month", "Website Fixer", "Sales Doctor", "Limited exports"],
-    cta: "Start Free Trial",
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "$79",
-    period: "/month",
-    description: "For growing businesses",
-    features: ["3 business profiles", "10 audits/month", "All modules", "Full PDF & ZIP exports", "Version history", "Priority support"],
-    cta: "Start Free Trial",
-    popular: true,
-  },
-  {
-    name: "Agency",
-    price: "$149",
-    period: "/month",
-    description: "For agencies & teams",
-    features: ["25 business profiles", "100 audits/month", "All modules + Cost Cutter", "White-label exports", "Team members (25)", "Dedicated support"],
-    cta: "Start Free Trial",
-    popular: false,
-  },
-];
-
-const STEPS = [
-  { step: "01", title: "Add Your Business", description: "Enter your business details, paste website content, or upload screenshots." },
-  { step: "02", title: "Run AI Diagnosis", description: "Our AI analyzes your website, SEO, offers, social presence, and reputation." },
-  { step: "03", title: "Get Recovery Plan", description: "Receive a prioritized 30/60/90-day plan with ready-to-use assets." },
-  { step: "04", title: "Fix & Grow", description: "Implement fixes with generated copy, ads, emails, and scripts." },
-];
-
-const STATS = [
-  { value: "10K+", label: "Businesses Analyzed" },
-  { value: "94%", label: "Report Accuracy" },
-  { value: "2.4x", label: "Avg Revenue Lift" },
-  { value: "<3min", label: "Time to First Audit" },
-];
-
-const TESTIMONIALS = [
-  {
-    name: "Sarah Chen",
-    role: "Owner, Bloom Studio",
-    quote: "Recovra.ai found 14 critical issues I had no idea about. After fixing them, my online orders went up 180% in just 6 weeks. It paid for itself on day one.",
-    rating: 5,
-  },
-  {
-    name: "Marcus Johnson",
-    role: "CEO, TechFix Pro",
-    quote: "We were spending $3K/month on a marketing agency that couldn't tell us what was actually wrong. Recovra.ai diagnosed everything in 3 minutes for $79/month.",
-    rating: 5,
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Founder, Casa Bella Interiors",
-    quote: "The 30/60/90 day plan was a game changer. Instead of feeling overwhelmed, I knew exactly what to fix each week. Revenue is up 2.1x since we started.",
-    rating: 5,
-  },
-  {
-    name: "David Park",
-    role: "Managing Director, Peak Fitness",
-    quote: "Our Google reviews went from 3.2 to 4.7 stars using the Reputation Fixer. New sign-ups increased 65% the following month. Incredible tool.",
-    rating: 5,
-  },
-  {
-    name: "Lisa Thompson",
-    role: "Agency Owner, BrightPath Digital",
-    quote: "I use the Agency plan to audit all my clients. It saves my team 20+ hours per client on initial diagnostics. White-label exports are the cherry on top.",
-    rating: 5,
-  },
-  {
-    name: "James O'Brien",
-    role: "Owner, Craft & Cork Bistro",
-    quote: "I was skeptical about AI auditing my restaurant business. But the findings were spot-on — missing Google Business profile, no email list, terrible meta descriptions. Fixed them all.",
-    rating: 5,
-  },
-];
-
-const FAQ_ITEMS = [
-  {
-    q: "What is Recovra.ai?",
-    a: "Recovra.ai is an AI-powered platform that diagnoses what's wrong with your business's online presence (website, SEO, social, offers, reputation) and generates a complete recovery plan with ready-to-use marketing assets.",
-  },
-  {
-    q: "How does the AI audit work?",
-    a: "You provide your business details, website URL, and social profiles. Our AI (powered by Claude, GPT-4, and Gemini) analyzes everything and generates a scorecard across 6 categories, identifies specific issues with severity ratings, and creates a prioritized 30/60/90-day repair plan.",
-  },
-  {
-    q: "How long does an audit take?",
-    a: "Most audits complete in under 3 minutes. You'll receive your full scorecard, findings list, and repair plan immediately after the audit finishes.",
-  },
-  {
-    q: "Is there a free trial?",
-    a: "Yes! All plans include a 7-day free trial. You can run your first audit completely free with no credit card required.",
-  },
-  {
-    q: "What kind of businesses is this for?",
-    a: "Recovra.ai works for any business with an online presence — restaurants, salons, fitness studios, agencies, SaaS companies, e-commerce stores, professional services, and more. If you have a website and want more customers, it's for you.",
-  },
-  {
-    q: "Can I use Recovra.ai for my clients?",
-    a: "Absolutely! Our Agency plan ($149/month) supports up to 25 business profiles and 100 audits/month with white-label exports and team access. Many marketing agencies use Recovra.ai to onboard and diagnose clients.",
-  },
-  {
-    q: "What assets does Recovra.ai generate?",
-    a: "Depending on your audit findings, Recovra.ai can generate: website copy, ad scripts (Meta & Google), email sequences, SMS sequences, review reply templates, SEO plans, sales scripts, offer packages, FAQs, win-back messages, and cost checklists.",
-  },
-  {
-    q: "Can I cancel anytime?",
-    a: "Yes. No contracts, no commitments. Cancel anytime from your billing page and you won't be charged again. Your data remains accessible until the end of your billing period.",
-  },
-];
-
-function IconComponent({ name, className }: { name: string; className?: string }) {
-  const icons: Record<string, any> = { Target, FileText, Sparkles, BarChart3, Star, TrendingUp };
-  const Icon = icons[name] || Zap;
-  return <Icon className={className} />;
+function DropdownLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="block px-4 py-2.5 text-sm text-slate-700 transition-colors hover:bg-slate-50">
+      {children}
+    </Link>
+  );
 }
 
 export default async function HomePage() {
@@ -167,428 +60,407 @@ export default async function HomePage() {
   ]);
 
   return (
-    <div className="relative overflow-hidden">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
-            </div>
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Features</a>
-              <a href="#how-it-works" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">How it Works</a>
-              <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
-              <a href="#faq" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">FAQ</a>
-              <Link href="/blog" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
-            </div>
+    <div className="min-h-screen bg-white text-slate-900 antialiased">
+      <header className="landing-hero-bg relative text-white">
+        <div className="landing-hero-waves" aria-hidden>
+          <svg className="wave-1 text-sky-200/50" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path
+              fill="currentColor"
+              fillOpacity="0.35"
+              d="M0,192L48,197.3C96,203,192,213,288,229.3C384,245,480,267,576,250.7C672,235,768,181,864,181.3C960,181,1056,235,1152,234.7C1248,235,1344,181,1392,154.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+            />
+          </svg>
+          <svg className="wave-2 text-white" viewBox="0 0 1440 200" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path
+              fill="currentColor"
+              fillOpacity="0.12"
+              d="M0,128L60,133.3C120,139,240,149,360,154.7C480,160,600,160,720,138.7C840,117,960,75,1080,69.3C1200,64,1320,96,1380,112L1440,128L1440,200L1380,200C1320,200,1200,200,1080,200C960,200,840,200,720,200C600,200,480,200,360,200C240,200,120,200,60,200L0,200Z"
+            />
+          </svg>
+        </div>
+
+        <nav className="relative z-30 border-b border-white/10">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <Link href="/" className="flex items-center">
+              {branding.logoUrl?.startsWith("http") ? (
+                <img src={branding.logoUrl} alt={branding.siteName} width={220} height={72} className="h-10 w-auto max-w-[220px] object-contain" />
+              ) : (
+                <Image src={branding.logoUrl || "/logo1.png"} alt={branding.siteName} width={220} height={72} className="h-10 w-auto object-contain" priority />
+              )}
+            </Link>
             <div className="flex items-center gap-3">
-              <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-medium shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                Get Started <ArrowRight className="w-4 h-4" />
+              <details className="relative md:hidden">
+                <summary className="cursor-pointer list-none rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-sm font-medium text-white [&::-webkit-details-marker]:hidden">
+                  Menu
+                </summary>
+                <div className="absolute right-0 top-full z-50 mt-2 min-w-[13rem] rounded-lg border border-slate-100 bg-white py-2 shadow-xl">
+                  <Link href="#features" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Product
+                  </Link>
+                  <Link href="#pricing" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Pricing
+                  </Link>
+                  <Link href="/blog" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Resources
+                  </Link>
+                  <Link href="/blog" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Blog
+                  </Link>
+                  <Link href="#trust-faq" className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50">
+                    Support
+                  </Link>
+                </div>
+              </details>
+
+              <div className="hidden items-center gap-1 md:flex">
+                <NavDropdown label="Product" light>
+                  <DropdownLink href="#features">Features</DropdownLink>
+                  <DropdownLink href="#how-it-works">How it works</DropdownLink>
+                </NavDropdown>
+                <Link href="#pricing" className="px-3 py-2 text-sm font-medium text-white/90 transition-colors hover:text-white">
+                  Pricing
+                </Link>
+                <NavDropdown label="Resources" light>
+                  <DropdownLink href="#features">Documentation</DropdownLink>
+                  <DropdownLink href="#trust-faq">Help center</DropdownLink>
+                </NavDropdown>
+                <Link href="/blog" className="px-3 py-2 text-sm font-medium text-white/90 transition-colors hover:text-white">
+                  Blog
+                </Link>
+                <Link href="#trust-faq" className="px-3 py-2 text-sm font-medium text-white/90 transition-colors hover:text-white">
+                  Support
+                </Link>
+              </div>
+
+              <Link href="/login" className="rounded-lg bg-[#1c57a3] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#174a8c]">
+                Start Login
               </Link>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-32 overflow-hidden">
-        <div className="absolute inset-0 grid-pattern" />
-        <div className="absolute top-20 left-1/4 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl" />
-        <div className="absolute top-40 right-1/4 w-96 h-96 bg-violet-400/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-blue-50 to-transparent rounded-full blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-sm font-medium mb-8 animate-fade-in">
-              <Sparkles className="w-4 h-4" />
-              AI-Powered Business Diagnostics
-              <ChevronRight className="w-3 h-3" />
-            </div>
-
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6 animate-slide-up">
-              Your business is
-              <span className="text-gradient"> broken.</span>
-              <br />
-              We&apos;ll fix it with
-              <span className="text-gradient"> AI.</span>
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-12 px-4 pb-28 pt-10 sm:px-6 sm:pb-32 lg:grid-cols-2 lg:items-center lg:gap-12 lg:px-8 lg:pb-36 lg:pt-8 xl:gap-16">
+          <div>
+            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-[2.75rem] lg:leading-[1.15]">
+              Diagnose. Recover. Optimize - Instantly with AI.
             </h1>
-
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              Recovra.ai diagnoses why your business isn&apos;t performing and generates a complete recovery plan with ready-to-use marketing assets — in minutes, not months.
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-white/90 sm:text-lg">
+              {branding.siteName} identifies hidden issues, explains root causes, and gives you a clear recovery plan in seconds.
             </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
+            <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white text-lg font-semibold shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="inline-flex items-center justify-center rounded-lg bg-gradient-to-b from-[#2563eb] to-[#1550c9] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/35 transition hover:from-[#1e56dc] hover:to-[#1246b5]"
               >
-                Start Free Diagnosis <ArrowRight className="w-5 h-5" />
+                Start Free Trial
               </Link>
-              <a
+              <Link
                 href="#how-it-works"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-xl border border-gray-200 text-gray-700 text-lg font-medium hover:bg-gray-50 transition-all"
+                className="inline-flex items-center justify-center rounded-lg border-2 border-white/80 bg-transparent px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                <Play className="w-5 h-5" /> See How It Works
-              </a>
+                View Demo
+              </Link>
             </div>
-
-            <div className="mt-12 flex items-center justify-center gap-8 text-sm text-gray-500 animate-fade-in" style={{ animationDelay: "0.4s" }}>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-green-500" />
-                No credit card required
+            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-4 text-sm text-white/85">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2} />
+                <span>Secure &amp; encrypted</span>
               </div>
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                Setup in 2 minutes
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 shrink-0 opacity-90" strokeWidth={2} />
+                <span>Payments via Stripe</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Globe className="w-4 h-4 text-green-500" />
-                Works worldwide
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden />
+                <span>Cancel anytime</span>
               </div>
             </div>
           </div>
 
-          {/* Dashboard Preview */}
-          <div className="mt-20 relative max-w-5xl mx-auto animate-slide-up" style={{ animationDelay: "0.3s" }}>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-gray-900/10 border border-gray-200">
-              <div className="bg-gray-900 px-4 py-3 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                </div>
-                <div className="flex-1 text-center text-xs text-gray-400">app.recovra.ai/dashboard</div>
-              </div>
-              <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 p-8 min-h-[400px]">
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-3 space-y-3">
-                    <div className="h-8 bg-white rounded-lg shadow-sm border border-gray-100" />
-                    <div className="space-y-2">
-                      {[1,2,3,4,5].map(i => (
-                        <div key={i} className={`h-9 rounded-lg ${i === 1 ? 'bg-blue-50 border border-blue-100' : 'bg-white border border-gray-100'}`} />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="col-span-9 space-y-4">
-                    <div className="flex gap-4">
-                      {["Overall: 42/100", "Website: 35", "SEO: 28", "Social: 55"].map((label, i) => (
-                        <div key={i} className="flex-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                          <div className="text-xs text-gray-400 mb-1">{label.split(":")[0]}</div>
-                          <div className={`text-2xl font-bold ${i === 0 ? 'text-orange-500' : i < 3 ? 'text-red-500' : 'text-yellow-500'}`}>
-                            {label.split(": ")[1]}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 space-y-3">
-                      <div className="text-sm font-semibold text-gray-700">Critical Findings</div>
-                      {["No clear CTA on homepage", "Missing meta descriptions", "No Google Business profile"].map((finding, i) => (
-                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-red-50/50">
-                          <div className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="text-sm text-gray-700">{finding}</span>
-                          <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium">Fix Now</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+          <div className="hero-dashboard-stage relative flex min-h-[280px] justify-center py-4 pb-8 pt-2 sm:pb-10 lg:min-h-[400px] lg:justify-end lg:justify-self-end lg:pl-4 lg:pr-0 lg:pb-16 lg:pt-1 xl:translate-x-1">
+            <div className="pointer-events-none absolute bottom-3 left-[14%] h-10 w-[74%] max-w-md rounded-[50%] bg-black/35 blur-2xl sm:bottom-5 lg:bottom-10 lg:left-[24%] lg:h-12 lg:w-[54%] lg:max-w-lg" aria-hidden />
+            <div className="hero-dashboard-tilt relative z-[2] w-full max-w-[470px] will-change-transform sm:max-w-[495px] lg:max-w-[535px] xl:max-w-[555px]">
+              <div className="hero-device-bezel relative rounded-[1.25rem] p-[10px]">
+                <div className="overflow-hidden rounded-[0.7rem] bg-[#0a0e14] ring-1 ring-black/60">
+                  <Image
+                    src="/landing-hero-dashboard.png"
+                    alt={`${branding.siteName} dashboard preview`}
+                    width={1200}
+                    height={900}
+                    className="h-auto w-full object-cover object-top"
+                    priority
+                  />
                 </div>
               </div>
             </div>
-            <div className="absolute -inset-4 -z-10 bg-gradient-to-r from-blue-500/10 via-violet-500/10 to-purple-500/10 rounded-3xl blur-2xl" />
           </div>
         </div>
+
+        <div className="landing-hero-base-waves" aria-hidden>
+          <svg className="hero-wave-layer-a" viewBox="0 0 1440 200" height="200" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,72 C360,22 720,118 1080,52 C1260,28 1380,58 1440,46 L1440,220 L0,220 Z" />
+          </svg>
+          <svg className="hero-wave-layer-b" viewBox="0 0 1440 200" height="200" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,88 C300,120 540,40 840,78 C1020,98 1200,68 1440,92 L1440,220 L0,220 Z" />
+          </svg>
+          <svg className="hero-wave-layer-c" viewBox="0 0 1440 200" height="200" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,102 C420,72 620,130 960,92 C1140,76 1320,108 1440,96 L1440,220 L0,220 Z" />
+          </svg>
+          <svg className="hero-wave-layer-d" viewBox="0 0 1440 200" height="200" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,118 C480,88 720,138 1200,108 C1320,100 1380,118 1440,110 L1440,220 L0,220 Z" />
+          </svg>
+        </div>
+      </header>
+
+      <section className="relative z-10 border-b border-slate-200/50 bg-gradient-to-b from-[#eef6fc] via-[#f5f9fc] to-[#fafcfe] py-6 text-center sm:py-7">
+        <p className="text-sm font-semibold sm:text-base">
+          <span className="text-black">Trusted by </span>
+          <span className="text-[#286fd7]">founders, operators, and growth teams.</span>
+        </p>
       </section>
 
-      {/* Stats bar */}
-      <section className="relative py-12 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {STATS.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl sm:text-4xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-400">{stat.label}</div>
-              </div>
+      <section id="how-it-works" className="border-b border-slate-100/80 bg-[#f3f9fc] py-16 sm:py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-stretch gap-12 md:flex-row md:items-center md:justify-between md:gap-4 lg:gap-6">
+            {[
+              { n: "1.", title: "Diagnose", desc: "Scan your systems" },
+              { n: "2.", title: "Analyze", desc: "Identify root causes" },
+              { n: "3.", title: "Recover", desc: "Get a recovery plan" },
+            ].map((step, i) => (
+              <Fragment key={step.title}>
+                <div className="flex flex-1 items-center gap-4 md:min-w-0">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-slate-300 bg-transparent text-lg font-bold text-[#2f80ed]" aria-hidden>
+                    {step.n}
+                  </div>
+                  <div className="min-w-0 text-left">
+                    <div className="text-lg font-bold text-[#1c3d6e]">{step.title}</div>
+                    <div className="mt-0.5 text-sm font-normal text-[#666666]">{step.desc}</div>
+                  </div>
+                </div>
+                {i < 2 && <ChevronRight className="hidden h-8 w-8 shrink-0 text-slate-400 md:block lg:h-9 lg:w-9" strokeWidth={1.5} aria-hidden />}
+              </Fragment>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="py-24 relative">
-        <div className="absolute inset-0 dot-pattern opacity-50" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-sm font-medium mb-4">
-              All-in-One Platform
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Every tool you need to <span className="text-gradient">repair your business</span>
-            </h2>
-            <p className="text-gray-600 text-lg">
-              From diagnosis to execution — get a complete recovery toolkit powered by AI.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => (
-              <div
-                key={feature.title}
-                className="group relative p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-100 hover:shadow-lg hover:shadow-blue-500/5 transition-all duration-300"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-50 to-violet-50 flex items-center justify-center mb-4 group-hover:from-blue-100 group-hover:to-violet-100 transition-colors">
-                  <IconComponent name={feature.icon} className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section id="how-it-works" className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm font-medium mb-4">
-              Simple Process
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              From broken to <span className="text-gradient">booming</span> in 4 steps
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-4 gap-8">
-            {STEPS.map((step, i) => (
-              <div key={step.step} className="relative">
-                {i < STEPS.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-full w-full h-px bg-gradient-to-r from-blue-200 to-transparent -translate-x-4" />
-                )}
-                <div className="text-5xl font-black text-blue-100 mb-4">{step.step}</div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                <p className="text-gray-500 text-sm">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="testimonials" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-sm font-medium mb-4">
-              Trusted by Thousands
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Real businesses, <span className="text-gradient">real results</span>
-            </h2>
-            <p className="text-gray-600 text-lg">
-              See what business owners are saying about Recovra.ai.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div
-                key={t.name}
-                className="p-6 rounded-2xl border border-gray-100 bg-white hover:shadow-lg hover:border-blue-50 transition-all duration-300"
-              >
-                <div className="flex items-center gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-6">
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div className="flex items-center gap-3 pt-4 border-t border-gray-50">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
-                    {t.name.split(" ").map(n => n[0]).join("")}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{t.name}</div>
-                    <div className="text-xs text-gray-500">{t.role}</div>
-                  </div>
+      <section id="features" className="bg-[#f8fafc] py-16 sm:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="mx-auto max-w-4xl text-center text-3xl font-bold leading-tight text-[#1c3d6e] sm:text-4xl">
+            See exactly what&apos;s broken - and how to fix it.
+          </h2>
+          <div className="relative mt-12 sm:mt-14">
+            <div className="grid gap-10 lg:grid-cols-2 lg:gap-12 lg:gap-x-14 xl:gap-x-16">
+              <div className="relative z-0 lg:min-h-[1px]">
+                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_-4px_rgba(15,35,70,0.12)] ring-1 ring-slate-200/90">
+                  <Image
+                    src="/landing-features-dashboard.png"
+                    alt={`${branding.siteName} features`}
+                    width={1100}
+                    height={900}
+                    className="h-auto w-full object-cover object-left-top"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-24 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-4">
-              Simple Pricing
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Plans that scale with <span className="text-gradient">your growth</span>
-            </h2>
-            <p className="text-gray-600 text-lg">Start free, upgrade when you need more power.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl p-8 ${
-                  plan.popular
-                    ? "bg-gradient-to-b from-blue-600 to-violet-700 text-white shadow-2xl shadow-blue-500/25 scale-105"
-                    : "bg-white border border-gray-200"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-yellow-400 text-yellow-900 text-xs font-bold">
-                    MOST POPULAR
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className={`text-lg font-semibold mb-1 ${plan.popular ? "text-white" : "text-gray-900"}`}>
-                    {plan.name}
-                  </h3>
-                  <p className={`text-sm ${plan.popular ? "text-blue-100" : "text-gray-500"}`}>
-                    {plan.description}
-                  </p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className={`text-sm ${plan.popular ? "text-blue-200" : "text-gray-500"}`}>
-                    {plan.period}
-                  </span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${plan.popular ? "text-blue-200" : "text-green-500"}`} />
-                      <span className={plan.popular ? "text-blue-50" : "text-gray-600"}>{feature}</span>
+              <div className="relative z-10 flex flex-col justify-start lg:pt-2">
+                <ul className="space-y-5">
+                  {[
+                    "AI-powered diagnostics",
+                    "Root cause analysis",
+                    "Actionable recovery steps",
+                    "Continuous optimization insights",
+                  ].map((item) => (
+                    <li key={item} className="flex gap-3.5">
+                      <Check className="mt-0.5 h-6 w-6 shrink-0 text-[#2f80ed]" strokeWidth={2.75} aria-hidden />
+                      <span className="text-base font-medium leading-relaxed text-[#1c3d6e]">{item}</span>
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href="/register"
-                  className={`block w-full text-center py-3 rounded-xl font-semibold text-sm transition-all ${
-                    plan.popular
-                      ? "bg-white text-blue-700 hover:bg-blue-50"
-                      : "bg-gray-900 text-white hover:bg-gray-800"
-                  }`}
-                >
-                  {plan.cta}
+              </div>
+            </div>
+            <div className="relative z-20 mx-auto mt-8 w-full max-w-2xl rounded-xl border border-slate-200/90 bg-[#f4f6f8] p-4 shadow-md sm:p-5 lg:absolute lg:bottom-0 lg:left-[34%] lg:mt-0 lg:w-[min(66%,36rem)] lg:translate-y-[42%] lg:mx-0">
+              <div className="flex gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" strokeWidth={2} />
+                <p className="text-sm leading-relaxed text-slate-600">
+                  AI-generated insights may vary and are for informational purposes only. Not professional advice.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="h-6 sm:h-8 lg:h-10" aria-hidden />
+        </div>
+      </section>
+
+      <section id="pricing" className="border-t border-slate-100 bg-slate-50/80 pb-16 pt-10 sm:pb-24 sm:pt-12">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-bold text-[#1c3d6e] sm:text-4xl">Pricing Plans</h2>
+          <div className="mx-auto mt-12 grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch md:gap-5 lg:gap-6">
+            <div className="pricing-card-shadow flex min-h-[380px] flex-col rounded-xl bg-white px-8 pb-8 pt-10">
+              <h3 className="text-lg font-bold text-slate-900">Starter</h3>
+              <p className="mt-3 text-4xl font-bold leading-none text-slate-900">
+                $19<span className="text-lg font-semibold text-slate-500">/mo</span>
+              </p>
+              <div className="mt-5 h-px w-full bg-slate-200" />
+              <p className="mt-6 flex-1 text-center text-sm font-normal text-slate-600">Basic Diagnostics</p>
+              <Link href="/register" className="mt-8 block w-full rounded-lg bg-[#1c57a3] py-3.5 text-center text-sm font-semibold text-white shadow-[0_2px_8px_rgba(28,87,163,0.35)] transition hover:bg-[#164877]">
+                Start Trial
+              </Link>
+            </div>
+            <div className="pricing-card-shadow flex min-h-[380px] flex-col overflow-hidden rounded-xl bg-white">
+              <div className="pricing-header-gradient relative px-6 pb-14 pt-10 text-center text-white">
+                <h3 className="text-lg font-bold text-white">Growth</h3>
+                <p className="mt-3 text-4xl font-bold leading-none">
+                  $49<span className="text-lg font-semibold text-white/85">/mo</span>
+                </p>
+                <svg className="absolute bottom-0 left-0 block h-[3rem] w-full text-white" viewBox="0 0 1440 48" preserveAspectRatio="none" aria-hidden>
+                  <path fill="currentColor" d="M0,22 Q720,6 1440,24 L1440,48 L0,48 Z" />
+                </svg>
+              </div>
+              <div className="flex flex-1 flex-col bg-white px-8 pb-8 pt-6 text-center">
+                <p className="text-sm text-slate-600">Full Diagnostics</p>
+                <p className="mt-2 text-sm text-slate-600">Recovery Plans</p>
+                <div className="flex-1" />
+                <Link href="/register" className="mt-8 block w-full rounded-lg bg-[#1c57a3] py-3.5 text-center text-sm font-semibold text-white shadow-[0_2px_8px_rgba(28,87,163,0.35)] transition hover:bg-[#164877]">
+                  Start Trial
                 </Link>
+              </div>
+            </div>
+            <div className="pricing-card-shadow flex min-h-[380px] flex-col overflow-hidden rounded-xl bg-white">
+              <div className="pricing-header-gradient relative px-6 pb-14 pt-10 text-center text-white">
+                <h3 className="text-lg font-bold text-white">Pro</h3>
+                <p className="mt-3 text-4xl font-bold leading-none">
+                  $99<span className="text-lg font-semibold text-white/85">/mo</span>
+                </p>
+                <svg className="absolute bottom-0 left-0 block h-[3.25rem] w-full text-white" viewBox="0 0 1440 52" preserveAspectRatio="none" aria-hidden>
+                  <path fill="currentColor" d="M0,20 C320,46 400,6 720,22 C1040,40 1120,4 1440,22 L1440,52 L0,52 Z" />
+                </svg>
+              </div>
+              <div className="flex flex-1 flex-col bg-white px-8 pb-8 pt-6 text-center">
+                <p className="text-sm text-slate-600">Unlimited Usage</p>
+                <p className="mt-2 text-sm text-slate-600">Advanced Insights</p>
+                <div className="flex-1" />
+                <Link href="/register" className="mt-8 block w-full rounded-lg bg-[#1c57a3] py-3.5 text-center text-sm font-semibold text-white shadow-[0_2px_8px_rgba(28,87,163,0.35)] transition hover:bg-[#164877]">
+                  Start Trial
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-10 sm:gap-y-2">
+            {["Free trial included", "No contracts", "Cancel anytime"].map((label) => (
+              <div key={label} className="flex items-center gap-2 text-sm text-[#1c3d6e]">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#2f80ed]">
+                  <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                </span>
+                {label}
               </div>
             ))}
           </div>
-          <p className="text-center text-sm text-gray-400 mt-8">
-            All plans include a 7-day free trial. Cancel anytime. Payments via Stripe & PayPal.
+          <p className="mx-auto mt-7 max-w-2xl text-center text-sm italic text-slate-500">
+            By subscribing, you agree to our{" "}
+            <a href="#" className="font-bold not-italic text-[#2f80ed] hover:underline">
+              Terms &amp; Privacy Policy
+            </a>
           </p>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-24">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-orange-700 text-sm font-medium mb-4">
-              FAQ
+      <section id="trust-faq" className="border-t border-[#edf2f7] bg-[#f8f9fb] py-12 sm:py-14">
+        <div className="mx-auto grid max-w-[1240px] gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:gap-12 lg:px-8">
+          <div className="divide-y divide-[#e4e9ef]">
+            <div className="flex items-center gap-3.5 pb-4 pt-0">
+              <Diamond className="h-5 w-5 shrink-0 fill-[#2b6fdd] text-[#2b6fdd]" strokeWidth={1.25} aria-hidden />
+              <span className="text-[1.02rem] font-bold text-[#142d52]">Your data stays yours.</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Frequently asked <span className="text-gradient">questions</span>
-            </h2>
+            <div className="flex items-center gap-3.5 py-4">
+              <Lock className="h-5 w-5 shrink-0 text-slate-900" strokeWidth={2} aria-hidden />
+              <span className="text-[1.02rem] font-normal text-slate-800">Encrypted &amp; secure</span>
+            </div>
+            <div className="flex items-center gap-3.5 py-4">
+              <CreditCard className="h-5 w-5 shrink-0 text-[#2b6fdd]" strokeWidth={2} aria-hidden />
+              <span className="text-[1.02rem] font-normal text-slate-800">Payments as Stripe</span>
+            </div>
+            <div className="flex items-center gap-3.5 pt-4">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e53935] text-white shadow-sm" aria-hidden>
+                <Check className="h-4 w-4" strokeWidth={3} />
+              </span>
+              <span className="text-[1.02rem] font-normal text-slate-800">No data selling</span>
+            </div>
           </div>
-          <div className="space-y-4">
-            {FAQ_ITEMS.map((item, i) => (
-              <details
-                key={i}
-                className="group rounded-2xl border border-gray-100 bg-white overflow-hidden"
+
+          <div className="flex flex-col gap-3.5">
+            {[
+              { q: "Is this accurate?", a: "AI outputs may vary — always validate." },
+              { q: "Can I cancel anytime?", a: "Yes, instantly from your dashboard." },
+              { q: "Is there free trial?", a: "Yes, no commitment." },
+            ].map((item) => (
+              <div
+                key={item.q}
+                className="flex items-center gap-3.5 rounded-[10px] border border-[#e2e8f0] bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(15,35,55,0.06)]"
               >
-                <summary className="flex items-center justify-between cursor-pointer p-6 text-left">
-                  <span className="text-sm font-semibold text-gray-900 pr-4">{item.q}</span>
-                  <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0 group-open:rotate-180 transition-transform" />
-                </summary>
-                <div className="px-6 pb-6 -mt-2">
-                  <p className="text-sm text-gray-600 leading-relaxed">{item.a}</p>
-                </div>
-              </details>
+                <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[#2b6fdd] text-white shadow-sm">
+                  <HelpCircle className="h-4 w-4 opacity-95" strokeWidth={2.25} aria-hidden />
+                </span>
+                <p className="min-w-0 text-[0.98rem] leading-snug">
+                  <span className="font-bold text-[#142d52]">{item.q}</span>
+                  <span className="font-normal text-[#4b5d73]"> {item.a}</span>
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Newsletter */}
-      <section id="newsletter" className="py-24 bg-gray-50">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center mx-auto mb-6">
-            <Mail className="w-7 h-7 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold mb-3">
-            Stay in the loop
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Get weekly tips on fixing business bottlenecks, new features, and case studies. No spam, unsubscribe anytime.
-          </p>
-          <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              name="email"
-              placeholder="you@company.com"
-              required
-              className="flex-1 h-12 px-5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <button
-              type="submit"
-              className="h-12 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 text-white text-sm font-semibold shadow-lg shadow-blue-500/25 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
-            >
-              Subscribe
-            </button>
-          </form>
-          <p className="text-xs text-gray-400 mt-4">Join 3,200+ business owners. Unsubscribe anytime.</p>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 bg-gray-900 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold text-white mb-6">
-            Stop guessing.<br />
-            <span className="text-gradient">Start fixing.</span>
-          </h2>
-          <p className="text-gray-400 text-lg mb-10 max-w-2xl mx-auto">
-            Join thousands of business owners who used Recovra.ai to identify what&apos;s broken and get back on track.
-          </p>
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 px-10 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-violet-500 text-white text-lg font-semibold shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            Run Your Free Audit <ArrowRight className="w-5 h-5" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-8 border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
-            <div className="flex flex-col items-center gap-1 md:flex-row md:items-center md:gap-2">
-              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
-              <span className="text-sm text-gray-400">{branding.tagline}</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm text-gray-500">
-              {footerItems.map(item => (
-                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} className="hover:text-gray-900 transition-colors">
+      <footer className="border-t border-[#edf2f7] bg-white">
+        <div className="mx-auto max-w-[1240px] px-4 pb-5 pt-6 sm:px-6 lg:px-8">
+          {footerItems.length > 0 && (
+            <div className="mb-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-b border-slate-100 pb-6 text-sm font-medium text-[#163a67]">
+              {footerItems.map((item) => (
+                <Link key={item.id} href={item.href} target={item.openNew ? "_blank" : undefined} rel={item.openNew ? "noopener noreferrer" : undefined} className="hover:underline">
                   {item.label}
                 </Link>
               ))}
             </div>
+          )}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-[1.02rem] font-semibold text-[#163a67] sm:grid-cols-4">
+            <nav className="flex flex-col gap-2.5">
+              <Link href="#features" className="hover:underline">
+                Features
+              </Link>
+              <Link href="#pricing" className="hover:underline">
+                Pricing
+              </Link>
+              <Link href="#trust-faq" className="hover:underline">
+                Contact
+              </Link>
+            </nav>
+            <nav className="flex flex-col gap-2.5">
+              <a href="#" className="hover:underline">
+                &bull; Terms of Service
+              </a>
+              <a href="#" className="hover:underline">
+                &bull; Contact
+              </a>
+            </nav>
+            <nav className="flex flex-col gap-2.5">
+              <a href="#" className="hover:underline">
+                &bull; Privacy Policy
+              </a>
+              <a href="#" className="hover:underline">
+                &bull; Acceptable Use
+              </a>
+            </nav>
+            <nav className="flex flex-col gap-2.5">
+              <a href="#" className="hover:underline">
+                &bull; Cookie Policy
+              </a>
+              <a href="#" className="hover:underline">
+                &bull; Refund Policy
+              </a>
+            </nav>
           </div>
+          <p className="mt-3 text-right text-sm text-slate-500">
+            © {new Date().getFullYear()} {branding.siteName} — All rights reserved.
+          </p>
         </div>
       </footer>
     </div>
