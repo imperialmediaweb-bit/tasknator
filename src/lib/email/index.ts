@@ -50,10 +50,18 @@ export interface SendEmailOptions {
 
 export async function sendEmail(options: SendEmailOptions) {
   const { transporter, from, configured } = await getTransporter();
+
+  console.log("[EMAIL] SMTP Configured:", configured);
+  console.log("[EMAIL] Sending to:", options.to);
+  console.log("[EMAIL] Subject:", options.subject);
+
   if (!configured) {
+    console.error("[EMAIL] ERROR: SMTP not configured (missing user/pass)");
     return null;
   }
+
   try {
+    console.log("[EMAIL] Attempting to send...");
     const result = await transporter.sendMail({
       from: options.from || from,
       to: options.to,
@@ -62,8 +70,10 @@ export async function sendEmail(options: SendEmailOptions) {
       text: options.text,
       replyTo: options.replyTo,
     });
+    console.log("[EMAIL] SUCCESS! Message ID:", result.messageId);
     return result;
-  } catch {
+  } catch (error) {
+    console.error("[EMAIL] FAILED:", error instanceof Error ? error.message : error);
     return null;
   }
 }
