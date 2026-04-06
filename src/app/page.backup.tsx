@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Zap, Shield, BarChart3, Target, Star, CheckCircle2, TrendingUp, FileText, Globe, Sparkles, ChevronRight, Play, ChevronDown, Mail } from "lucide-react";
 import { getSiteBranding } from "@/lib/branding";
 import { db } from "@/lib/db";
-import { Header } from "@/components/landing/Header";
-import { Hero } from "@/components/landing/Hero";
+import { LandingHeader } from "@/components/landing/Header";
+import { LandingHero } from "@/components/landing/Hero";
 
 const FEATURES = [
   {
