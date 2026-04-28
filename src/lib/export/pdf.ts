@@ -88,12 +88,14 @@ function getSeverityColor(severity: string): string {
 
 export async function generatePdfReport(data: PdfData): Promise<Buffer> {
   ensurePdfkitFonts();
-  return new Promise((resolve) => {
-    const doc = new PDFDocument({ margin: 50, size: "A4" });
-    const chunks: Buffer[] = [];
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks: Buffer[] = [];
 
-    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", (err) => reject(new Error(`PDF generation error: ${err.message}`)));
 
     const pageWidth = doc.page.width - 100; // 50 margin each side
 
@@ -266,5 +268,8 @@ export async function generatePdfReport(data: PdfData): Promise<Buffer> {
     }
 
     doc.end();
+    } catch (err) {
+      reject(new Error(`PDF building error: ${err instanceof Error ? err.message : String(err)}`));
+    }
   });
 }

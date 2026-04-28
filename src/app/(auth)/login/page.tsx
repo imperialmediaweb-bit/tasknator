@@ -35,7 +35,7 @@ export default function LoginPage() {
     <div>
       <div className="mb-8">
         <div className="lg:hidden flex items-center gap-2 mb-6">
-          <img src="/logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
+          <img src="/recovra-logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
         </div>
         <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
         <p className="text-slate-500 mt-1">Sign in to your account to continue</p>

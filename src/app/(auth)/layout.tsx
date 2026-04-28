@@ -9,7 +9,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
-            <img src="/logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
+            <img src="/recovra-logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
           </div>
         </div>
         <div className="relative space-y-6">

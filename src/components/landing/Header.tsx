@@ -19,7 +19,7 @@ export function LandingHeader({ branding }: LandingHeaderProps) {
               alt={branding.siteName}
               width={220}
               height={72}
-              className="h-20 w-auto max-w-[220px] object-contain"
+              className="h-14 w-auto max-w-[220px] object-contain"
             />
           ) : (
             <Image
@@ -27,7 +27,7 @@ export function LandingHeader({ branding }: LandingHeaderProps) {
               alt={branding.siteName}
               width={220}
               height={72}
-              className="h-20 w-auto object-contain"
+              className="h-14 w-auto object-contain"
               priority
             />
           )}

@@ -13,7 +13,7 @@ export function LandingHero({ branding }: LandingHeroProps) {
     <div className="relative z-10 mx-auto grid max-w-full gap-12 px-4 pb-28 pt-10 sm:px-6 sm:pb-32 lg:grid-cols-[1.1fr_1fr] lg:items-start lg:gap-12 lg:px-24 lg:pb-20 lg:pt-12 xl:gap-0">
       <div>
         <h1 className="text-4xl font-medium leading-tight tracking-tight lg:text-5xl lg:leading-[1.2]">
-          Diagnose. Recover. Optimize —<br />
+          Diagnose. Optimize. Recover —<br />
           Instantly with AI.
         </h1>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/95 sm:text-lg lg:text-lg">

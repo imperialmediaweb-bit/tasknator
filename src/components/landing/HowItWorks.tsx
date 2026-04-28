@@ -14,9 +14,9 @@ export function HowItWorks() {
         </div>
         <div className="flex flex-col items-stretch gap-12 md:flex-row md:items-center md:justify-between md:gap-4 lg:gap-6">
           {[
-            { n: "1", title: "Diagnose", desc: "Scan your systems" },
-            { n: "2", title: "Analyze", desc: "Identify root causes" },
-            { n: "3", title: "Recover", desc: "Get a recovery plan" },
+            { n: "1", title: "Diagnose", desc: "You provide your business details and website URL, and our AI analyzes everything to generate a scorecard across 6 categories." },
+            { n: "2", title: "Analyze", desc: "Recovra scans your system in real time to identify hidden issues and inefficiencies and pinpoints the root cause." },
+            { n: "3", title: "Recover", desc: "Get a prioritized 30/60/90-day repair plan with ready-to-use marketing assets (copy, ad scripts, email sequences, and more)." },
           ].map((step, i) => (
             <Fragment key={step.title}>
               <div className="flex flex-1 items-center gap-4 md:min-w-0">

@@ -34,7 +34,6 @@ const plans = [
       "All modules (except Cost Cutter)",
       "Full PDF & ZIP exports",
       "Version history",
-      "Priority support",
     ],
   },
   {
@@ -51,7 +50,6 @@ const plans = [
       "PDF & ZIP exports with your branding",
       "White-label: your logo, name & domain",
       "Team members (up to 25)",
-      "Dedicated support",
     ],
   },
 ];

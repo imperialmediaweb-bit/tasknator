@@ -81,7 +81,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         "Content-Length": String(pdf.length),
       },
     });
-  } catch {
-    return NextResponse.json({ error: "Failed to generate report" }, { status: 500 });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("PDF generation error:", errorMessage, error);
+    return NextResponse.json({ error: `Failed to generate report: ${errorMessage}` }, { status: 500 });
   }
 }

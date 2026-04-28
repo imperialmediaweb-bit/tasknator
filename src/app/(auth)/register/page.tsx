@@ -55,7 +55,7 @@ export default function RegisterPage() {
     <div>
       <div className="mb-8">
         <div className="lg:hidden flex items-center gap-2 mb-6">
-          <img src="/logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
+          <img src="/recovra-logo.png" alt="Recovra.ai" className="h-16 max-w-[220px] object-contain" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
         <p className="text-gray-500 mt-1">Start fixing your business with AI diagnostics</p>

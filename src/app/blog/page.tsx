@@ -77,8 +77,8 @@ export default async function BlogPage() {
                 className="group rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-100 transition-all"
               >
                 <div className="h-48 bg-gradient-to-br from-blue-50 to-violet-50 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-violet-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Zap className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <img src="/logo1.png" alt={branding.siteName} className="w-12 h-12 object-contain" />
                   </div>
                 </div>
                 <div className="p-6">

@@ -62,7 +62,7 @@ export function Pricing() {
             <div className="flex flex-1 flex-col bg-white px-8 pb-8 pt-6">
               <p className="text-center text-sm text-slate-600">For growing businesses</p>
               <ul className="mt-6 space-y-3">
-                {["3 business profiles", "10 audits/month", "All modules", "Full PDF & ZIP exports", "Version history", "Priority support"].map((feature) => (
+                {["3 business profiles", "10 audits/month", "All modules", "Full PDF & ZIP exports", "Version history"].map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#2f80ed]" strokeWidth={2.75} />
                     <span className="text-sm text-slate-600">{feature}</span>
@@ -99,7 +99,7 @@ export function Pricing() {
             <div className="flex flex-1 flex-col bg-white px-8 pb-8 pt-6">
               <p className="text-center text-sm text-slate-600">For agencies &amp; teams</p>
               <ul className="mt-6 space-y-3">
-                {["25 business profiles", "100 audits/month", "All modules + Cost Cutter", "White-label exports", "Team members (25)", "Dedicated support"].map((feature) => (
+                {["25 business profiles", "100 audits/month", "All modules + Cost Cutter", "White-label exports", "Team members (25)"].map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
                     <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#2f80ed]" strokeWidth={2.75} />
                     <span className="text-sm text-slate-600">{feature}</span>
