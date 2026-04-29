@@ -171,7 +171,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
         <div className="space-y-4">
           {/* Generate Plan - only show if no plan exists */}
           {latestAudit && latestAudit.status === "COMPLETED" && !latestPlan && (
-            <GeneratePlanCard auditRunId={latestAudit.id} hasPlan={!!latestPlan} planId={latestPlan?.id} businessId={business.id} />
+            <GeneratePlanCard auditRunId={latestAudit.id} hasPlan={false} planId={undefined} businessId={business.id} />
           )}
 
           {/* Plan Tasks Progress */}
