@@ -168,12 +168,21 @@ async function processAuditInline(auditRunId: string, businessProfile: BusinessP
     const dbKeys: Record<string, string> = {};
     for (const c of platformConfigs) dbKeys[c.key] = c.value;
 
-    const getKey = (name: string) => dbKeys[name] || process.env[name] || "";
+    const getKey = (name: string) => {
+      const dbKey = dbKeys[name];
+      const envKey = process.env[name];
+      const result = dbKey || envKey || "";
+      return result;
+    };
 
     let aiResponse: any;
     let aiError: string | null = null;
 
-    if (providerKey || getKey("ANTHROPIC_API_KEY") || getKey("OPENAI_API_KEY") || getKey("GEMINI_API_KEY")) {
+    const anthropicKey = getKey("ANTHROPIC_API_KEY");
+    const openaiKey = getKey("OPENAI_API_KEY");
+    const geminiKey = getKey("GEMINI_API_KEY");
+
+    if (providerKey || anthropicKey || openaiKey || geminiKey) {
       try {
         const { generateWithFallback } = await import("@/lib/ai/provider");
         const { decrypt } = await import("@/lib/crypto");
@@ -185,13 +194,19 @@ async function processAuditInline(auditRunId: string, businessProfile: BusinessP
           try {
             const decryptedKey = await decrypt(providerKey.encryptedKey, providerKey.nonce);
             providers.push({ type: providerKey.provider as ProviderType, apiKey: decryptedKey });
-          } catch {
-            // Skip workspace key on decrypt failure
+          } catch (err) {
+            // Failed to decrypt workspace key
           }
         }
-        if (getKey("ANTHROPIC_API_KEY")) providers.push({ type: "ANTHROPIC", apiKey: getKey("ANTHROPIC_API_KEY") });
-        if (getKey("OPENAI_API_KEY")) providers.push({ type: "OPENAI", apiKey: getKey("OPENAI_API_KEY") });
-        if (getKey("GEMINI_API_KEY")) providers.push({ type: "GEMINI", apiKey: getKey("GEMINI_API_KEY") });
+        if (anthropicKey) {
+          providers.push({ type: "ANTHROPIC", apiKey: anthropicKey });
+        }
+        if (openaiKey) {
+          providers.push({ type: "OPENAI", apiKey: openaiKey });
+        }
+        if (geminiKey) {
+          providers.push({ type: "GEMINI", apiKey: geminiKey });
+        }
 
         await db.auditRun.update({ where: { id: auditRunId }, data: { progress: 30 } });
 
