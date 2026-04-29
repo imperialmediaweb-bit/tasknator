@@ -1,5 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { UserMenu } from "./UserMenu";
 
 interface LandingHeaderProps {
   branding: {
@@ -8,7 +11,8 @@ interface LandingHeaderProps {
   };
 }
 
-export function LandingHeader({ branding }: LandingHeaderProps) {
+export async function LandingHeader({ branding }: LandingHeaderProps) {
+  const session = await getServerSession(authOptions);
   return (
     <nav className="relative z-30 border-b border-white/50">
       <div className="mx-auto flex max-w-full items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-24">
@@ -38,6 +42,16 @@ export function LandingHeader({ branding }: LandingHeaderProps) {
               Menu
             </summary>
             <div className="absolute right-0 top-full z-50 mt-2 min-w-[13rem] rounded-lg border border-slate-100 bg-white py-2 shadow-xl">
+              {session?.user && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-semibold border-b"
+                  >
+                    Dashboard
+                  </Link>
+                </>
+              )}
               <a
                 href="#how-it-works"
                 className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50"
@@ -93,18 +107,32 @@ export function LandingHeader({ branding }: LandingHeaderProps) {
           </div>
 
           <div className="ml-auto flex items-center gap-4">
-            <Link
-              href="/login"
-              className="text-sm font-semibold text-white/90 transition-colors hover:text-white"
-            >
-              Log in
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-sm bg-[#1c57a3] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#174a8c]"
-            >
-              Get Started
-            </Link>
+            {session?.user ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="text-sm font-semibold text-white/90 transition-colors hover:text-white"
+                >
+                  Dashboard
+                </Link>
+                <UserMenu name={session.user.name} email={session.user.email} />
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-semibold text-white/90 transition-colors hover:text-white"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-sm bg-[#1c57a3] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#174a8c]"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>

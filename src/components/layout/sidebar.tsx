@@ -51,19 +51,19 @@ export function Sidebar() {
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100">
         {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
+          <Link href="/" className="flex items-center gap-2 min-w-0 hover:opacity-80 transition-opacity">
             <Logo />
             {(!branding.logoUrl || branding.whiteLabel) && <span className="font-bold text-slate-900 truncate">{branding.siteName}</span>}
           </Link>
         )}
         {collapsed && (
-          <div className="mx-auto">
+          <Link href="/" className="mx-auto hover:opacity-80 transition-opacity">
             {branding.logoUrl ? (
               <img src={branding.logoUrl} alt={branding.siteName} className="h-8 w-8 object-contain" />
             ) : (
               <DefaultLogo />
             )}
-          </div>
+          </Link>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
