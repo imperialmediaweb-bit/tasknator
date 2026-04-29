@@ -10,7 +10,7 @@ interface UserMenuProps {
 
 export function UserMenu({ name, email }: UserMenuProps) {
   const handleLogout = async () => {
-    await signOut({ redirectTo: "/" });
+    await signOut({ redirect: true, callbackUrl: "/" });
   };
 
   const initials = (name?.charAt(0) || email?.charAt(0) || "U").toUpperCase();
