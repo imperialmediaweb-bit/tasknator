@@ -159,6 +159,7 @@ model Workspace {
   usageMeters      UsageMeter[]
   invoices         Invoice[]
   auditLogs        AuditLog[]
+  conversations    Conversation[]
 }
 
 model Membership {
@@ -405,6 +406,29 @@ model AuditLog {
 
   user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+}
+
+// ─── Chat & Conversations ──────────────────────────────────
+
+model Conversation {
+  id          String        @id @default(cuid())
+  workspaceId String
+  title       String        @default("Chat")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  role           String       // "user" | "assistant"
+  content        String       @db.Text
+  createdAt      DateTime     @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 }
 
 // ─── Content ─────────────────────────────────────────────
