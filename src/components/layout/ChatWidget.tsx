@@ -281,7 +281,7 @@ export default function ChatWidget() {
           {!hasMessages && initialized && (
             <div className="text-center text-gray-500 text-sm pt-8">
               <p className="font-medium">Hi! 👋</p>
-              <p className="mt-2">I'm your AI business consultant. I have access to all your audit results, repair plans, and business data.</p>
+              <p className="mt-2">I&apos;m your AI business consultant. I have access to all your audit results, repair plans, and business data.</p>
               <p className="mt-3 text-xs">Ask me anything about your recovery plan!</p>
             </div>
           )}
