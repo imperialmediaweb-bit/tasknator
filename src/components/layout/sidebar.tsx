@@ -28,7 +28,7 @@ export function Sidebar() {
   const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = (session?.user as any)?.isAdmin;
-  const [branding, setBranding] = useState({ siteName: "Recovra.ai", logoUrl: "/logo1.png", whiteLabel: false });
+  const [branding, setBranding] = useState({ siteName: "Recovra.ai", logoUrl: "/recovra-logo.png", whiteLabel: false });
 
   useEffect(() => {
     fetch("/api/branding").then(r => r.json()).then(d => setBranding(d)).catch(() => {});

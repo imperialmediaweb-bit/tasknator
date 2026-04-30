@@ -38,14 +38,14 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       siteName: data["SITE_NAME"] || "Recovra.ai",
-      logoUrl: data["SITE_LOGO_URL"] || "/logo1.png",
+      logoUrl: data["SITE_LOGO_URL"] || "/recovra-logo.png",
       tagline: data["SITE_TAGLINE"] || "AI that fixes business bottlenecks",
       whiteLabel: false,
     });
   } catch {
     return NextResponse.json({
       siteName: "Recovra.ai",
-      logoUrl: "/logo1.png",
+      logoUrl: "/recovra-logo.png",
       tagline: "AI that fixes business bottlenecks",
       whiteLabel: false,
     });

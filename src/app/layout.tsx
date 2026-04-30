@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Recovra.ai — AI That Fixes Business Bottlenecks",
   description: "Diagnose why your business is underperforming and get an actionable AI-powered recovery plan with ready-to-use assets.",
   keywords: ["business diagnostics", "AI business repair", "business audit", "recovery plan", "SaaS"],
-  icons: { icon: "/logo1.png" },
+  icons: { icon: "/recovra-logo.png" },
 };
 
 export default function RootLayout({

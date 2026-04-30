@@ -77,8 +77,8 @@ export default async function BlogPage() {
                 className="group rounded-2xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-blue-100 transition-all"
               >
                 <div className="h-48 bg-gradient-to-br from-blue-50 to-violet-50 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <img src="/logo1.png" alt={branding.siteName} className="w-12 h-12 object-contain" />
+                  <div className="w-128 h-28 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <img src="/recovra-logo.png" alt={branding.siteName} className="w-28 h-28 object-contain" />
                   </div>
                 </div>
                 <div className="p-6">
@@ -116,7 +116,7 @@ export default async function BlogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
             <div className="flex items-center gap-2">
-              <img src="/logo.png" alt={branding.siteName} className="h-16 max-w-[220px] object-contain" />
+              <img src="/recovra-logo.png" alt={branding.siteName} className="h-20 max-w-[220px] object-contain" />
               <span className="text-sm text-gray-400 ml-2">{branding.tagline}</span>
             </div>
             <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm text-gray-500">
