@@ -40,9 +40,6 @@ const API_KEY_FIELDS = [
   { key: "GOOGLE_CLIENT_SECRET", label: "Google Client Secret", desc: "For Google OAuth login", group: "Google OAuth" },
   { key: "STRIPE_SECRET_KEY", label: "Stripe Secret Key", desc: "For payment processing", group: "Payments" },
   { key: "STRIPE_WEBHOOK_SECRET", label: "Stripe Webhook Secret", desc: "For Stripe webhook verification", group: "Payments" },
-  { key: "PAYPAL_CLIENT_ID", label: "PayPal Client ID", desc: "For PayPal payment processing", group: "Payments" },
-  { key: "PAYPAL_CLIENT_SECRET", label: "PayPal Client Secret", desc: "For PayPal payment processing", group: "Payments" },
-  { key: "PAYPAL_WEBHOOK_ID", label: "PayPal Webhook ID", desc: "For PayPal webhook verification", group: "Payments" },
 ];
 
 export default function AdminPage() {
@@ -398,14 +395,14 @@ export default function AdminPage() {
             <div className={`rounded-2xl p-5 border ${envStatus.STRIPE_SECRET_KEY || config.STRIPE_SECRET_KEY ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-slate-900">Payments</h3>
-                {config.STRIPE_SECRET_KEY ? (
+                {envStatus.STRIPE_SECRET_KEY || config.STRIPE_SECRET_KEY ? (
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 ) : (
                   <AlertCircle className="w-5 h-5 text-amber-500" />
                 )}
               </div>
               <p className="text-sm text-slate-600">
-                {config.STRIPE_SECRET_KEY
+                {envStatus.STRIPE_SECRET_KEY || config.STRIPE_SECRET_KEY
                   ? "Stripe payments are connected"
                   : "Stripe not configured. Set up in Platform Config."}
               </p>
